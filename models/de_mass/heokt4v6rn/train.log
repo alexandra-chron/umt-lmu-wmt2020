@@ -1,0 +1,398 @@
+INFO - 03/30/20 22:31:34 - 0:00:00 - ============ Initialized logger ============
+INFO - 03/30/20 22:31:34 - 0:00:00 - ae_steps: []
+                                     asm: False
+                                     attention_dropout: 0.1
+                                     attention_setting: v1
+                                     back_dataset: {}
+                                     batch_size: 32
+                                     beam_size: 1
+                                     bmt_steps: []
+                                     bptt: 256
+                                     bt_src_langs: []
+                                     bt_steps: []
+                                     clip_grad_norm: 5
+                                     clm_steps: []
+                                     command: python train.py --local_rank=0 --exp_name de_mass --dump_path './models' --data_path '/mounts/data/proj/dario/data/xlm/ted/data' --lgs de --mass_steps de --encoder_only false --emb_dim 1024 --n_layers 6 --n_heads 8 --dropout '0.1' --attention_dropout '0.1' --gelu_activation true --tokens_per_batch 1000 --optimizer 'adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001' --epoch_size 200000 --max_epoch 100000 --word_mass '0.5' --min_len 5 --exp_id "heokt4v6rn"
+                                     context_size: 0
+                                     data_path: /mounts/data/proj/dario/data/xlm/ted/data
+                                     debug_slurm: False
+                                     debug_train: False
+                                     dropout: 0.1
+                                     dump_path: ./models/de_mass/heokt4v6rn
+                                     early_stopping: False
+                                     emb_dim: 1024
+                                     encoder_only: False
+                                     english_only: False
+                                     epoch_size: 200000
+                                     eval_bleu: False
+                                     eval_only: False
+                                     exp_id: heokt4v6rn
+                                     exp_name: de_mass
+                                     fp16: False
+                                     gelu_activation: True
+                                     global_rank: 0
+                                     group_by_size: True
+                                     id2lang: {0: 'de'}
+                                     is_master: True
+                                     is_slurm_job: False
+                                     lambda_ae: 1
+                                     lambda_bmt: 1
+                                     lambda_bt: 1
+                                     lambda_clm: 1
+                                     lambda_mass: 1
+                                     lambda_mlm: 1
+                                     lambda_mt: 1
+                                     lambda_pc: 1
+                                     lambda_span: 10000
+                                     lang2id: {'de': 0}
+                                     langs: ['de']
+                                     length_penalty: 1
+                                     lg_sampling_factor: -1
+                                     lgs: de
+                                     local_rank: 0
+                                     mass_steps: ['de']
+                                     master_port: -1
+                                     max_batch_size: 0
+                                     max_epoch: 100000
+                                     max_len: 100
+                                     max_vocab: -1
+                                     min_count: 0
+                                     min_len: 5
+                                     mlm_steps: []
+                                     mono_dataset: {'de': {'train': '/mounts/data/proj/dario/data/xlm/ted/data/train.de.pth', 'valid': '/mounts/data/proj/dario/data/xlm/ted/data/valid.de.pth', 'test': '/mounts/data/proj/dario/data/xlm/ted/data/test.de.pth'}}
+                                     mt_steps: []
+                                     multi_gpu: False
+                                     multi_node: False
+                                     n_dec_layers: 6
+                                     n_gpu_per_node: 1
+                                     n_heads: 8
+                                     n_langs: 1
+                                     n_layers: 6
+                                     n_nodes: 1
+                                     node_id: 0
+                                     optimizer: adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001
+                                     para_dataset: {}
+                                     pc_steps: []
+                                     reload_model: 
+                                     sample_alpha: 0
+                                     save_periodic: 0
+                                     share_inout_emb: True
+                                     sinusoidal_embeddings: False
+                                     split_data: False
+                                     stopping_criterion: 
+                                     tokens_per_batch: 1000
+                                     validation_metrics: 
+                                     word_blank: 0
+                                     word_dropout: 0
+                                     word_keep: 0.1
+                                     word_mask: 0.8
+                                     word_mask_keep_rand: 0.8,0.1,0.1
+                                     word_mass: 0.5
+                                     word_pred: 0.15
+                                     word_rand: 0.1
+                                     word_shuffle: 0
+                                     world_size: 1
+INFO - 03/30/20 22:31:34 - 0:00:00 - The experiment will be stored in ./models/de_mass/heokt4v6rn
+                                     
+INFO - 03/30/20 22:31:34 - 0:00:00 - Running command: python train.py --local_rank=0 --exp_name de_mass --dump_path './models' --data_path '/mounts/data/proj/dario/data/xlm/ted/data' --lgs de --mass_steps de --encoder_only false --emb_dim 1024 --n_layers 6 --n_heads 8 --dropout '0.1' --attention_dropout '0.1' --gelu_activation true --tokens_per_batch 1000 --optimizer 'adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001' --epoch_size 200000 --max_epoch 100000 --word_mass '0.5' --min_len 5
+
+WARNING - 03/30/20 22:31:34 - 0:00:00 - Signal handler installed.
+INFO - 03/30/20 22:31:34 - 0:00:00 - ============ Monolingual data (de)
+INFO - 03/30/20 22:31:34 - 0:00:00 - Loading data from /mounts/data/proj/dario/data/xlm/ted/data/train.de.pth ...
+INFO - 03/30/20 22:31:34 - 0:00:00 - 4209905 words (64699 unique) in 196861 sentences. 2 unknown words (1 unique) covering 0.00% of the data.
+INFO - 03/30/20 22:31:34 - 0:00:00 - Removed 0 empty sentences.
+INFO - 03/30/20 22:31:34 - 0:00:00 - Removed 0 too long sentences.
+INFO - 03/30/20 22:31:34 - 0:00:00 - Removed 3690 too short sentences
+
+INFO - 03/30/20 22:31:34 - 0:00:00 - Loading data from /mounts/data/proj/dario/data/xlm/ted/data/valid.de.pth ...
+INFO - 03/30/20 22:31:34 - 0:00:00 - 32731 words (64699 unique) in 1700 sentences. 0 unknown words (0 unique) covering 0.00% of the data.
+
+INFO - 03/30/20 22:31:34 - 0:00:00 - Loading data from /mounts/data/proj/dario/data/xlm/ted/data/test.de.pth ...
+INFO - 03/30/20 22:31:34 - 0:00:00 - 21802 words (64699 unique) in 993 sentences. 0 unknown words (0 unique) covering 0.00% of the data.
+
+
+
+INFO - 03/30/20 22:31:35 - 0:00:00 - ============ Data summary
+INFO - 03/30/20 22:31:35 - 0:00:00 - Monolingual data   - train -           de:    196861
+INFO - 03/30/20 22:31:35 - 0:00:00 - Monolingual data   - valid -           de:      1700
+INFO - 03/30/20 22:31:35 - 0:00:00 - Monolingual data   -  test -           de:       993
+
+DEBUG - 03/30/20 22:31:38 - 0:00:04 - Encoder: TransformerModel(
+                                        (position_embeddings): Embedding(512, 1024)
+                                        (lang_embeddings): Embedding(1, 1024)
+                                        (embeddings): Embedding(64699, 1024, padding_idx=2)
+                                        (layer_norm_emb): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                        (attentions): ModuleList(
+                                          (0): MultiHeadAttention(
+                                            (q_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (k_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (v_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (out_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                          )
+                                          (1): MultiHeadAttention(
+                                            (q_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (k_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (v_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (out_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                          )
+                                          (2): MultiHeadAttention(
+                                            (q_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (k_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (v_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (out_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                          )
+                                          (3): MultiHeadAttention(
+                                            (q_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (k_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (v_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (out_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                          )
+                                          (4): MultiHeadAttention(
+                                            (q_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (k_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (v_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (out_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                          )
+                                          (5): MultiHeadAttention(
+                                            (q_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (k_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (v_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (out_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                          )
+                                        )
+                                        (layer_norm1): ModuleList(
+                                          (0): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                          (1): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                          (2): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                          (3): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                          (4): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                          (5): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                        )
+                                        (ffns): ModuleList(
+                                          (0): TransformerFFN(
+                                            (lin1): Linear(in_features=1024, out_features=4096, bias=True)
+                                            (lin2): Linear(in_features=4096, out_features=1024, bias=True)
+                                          )
+                                          (1): TransformerFFN(
+                                            (lin1): Linear(in_features=1024, out_features=4096, bias=True)
+                                            (lin2): Linear(in_features=4096, out_features=1024, bias=True)
+                                          )
+                                          (2): TransformerFFN(
+                                            (lin1): Linear(in_features=1024, out_features=4096, bias=True)
+                                            (lin2): Linear(in_features=4096, out_features=1024, bias=True)
+                                          )
+                                          (3): TransformerFFN(
+                                            (lin1): Linear(in_features=1024, out_features=4096, bias=True)
+                                            (lin2): Linear(in_features=4096, out_features=1024, bias=True)
+                                          )
+                                          (4): TransformerFFN(
+                                            (lin1): Linear(in_features=1024, out_features=4096, bias=True)
+                                            (lin2): Linear(in_features=4096, out_features=1024, bias=True)
+                                          )
+                                          (5): TransformerFFN(
+                                            (lin1): Linear(in_features=1024, out_features=4096, bias=True)
+                                            (lin2): Linear(in_features=4096, out_features=1024, bias=True)
+                                          )
+                                        )
+                                        (layer_norm2): ModuleList(
+                                          (0): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                          (1): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                          (2): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                          (3): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                          (4): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                          (5): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                        )
+                                        (pred_layer): PredLayer(
+                                          (proj): Linear(in_features=1024, out_features=64699, bias=True)
+                                        )
+                                      )
+DEBUG - 03/30/20 22:31:38 - 0:00:04 - Decoder: TransformerModel(
+                                        (position_embeddings): Embedding(512, 1024)
+                                        (lang_embeddings): Embedding(1, 1024)
+                                        (embeddings): Embedding(64699, 1024, padding_idx=2)
+                                        (layer_norm_emb): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                        (attentions): ModuleList(
+                                          (0): MultiHeadAttention(
+                                            (q_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (k_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (v_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (out_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                          )
+                                          (1): MultiHeadAttention(
+                                            (q_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (k_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (v_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (out_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                          )
+                                          (2): MultiHeadAttention(
+                                            (q_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (k_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (v_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (out_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                          )
+                                          (3): MultiHeadAttention(
+                                            (q_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (k_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (v_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (out_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                          )
+                                          (4): MultiHeadAttention(
+                                            (q_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (k_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (v_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (out_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                          )
+                                          (5): MultiHeadAttention(
+                                            (q_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (k_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (v_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (out_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                          )
+                                        )
+                                        (layer_norm1): ModuleList(
+                                          (0): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                          (1): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                          (2): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                          (3): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                          (4): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                          (5): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                        )
+                                        (ffns): ModuleList(
+                                          (0): TransformerFFN(
+                                            (lin1): Linear(in_features=1024, out_features=4096, bias=True)
+                                            (lin2): Linear(in_features=4096, out_features=1024, bias=True)
+                                          )
+                                          (1): TransformerFFN(
+                                            (lin1): Linear(in_features=1024, out_features=4096, bias=True)
+                                            (lin2): Linear(in_features=4096, out_features=1024, bias=True)
+                                          )
+                                          (2): TransformerFFN(
+                                            (lin1): Linear(in_features=1024, out_features=4096, bias=True)
+                                            (lin2): Linear(in_features=4096, out_features=1024, bias=True)
+                                          )
+                                          (3): TransformerFFN(
+                                            (lin1): Linear(in_features=1024, out_features=4096, bias=True)
+                                            (lin2): Linear(in_features=4096, out_features=1024, bias=True)
+                                          )
+                                          (4): TransformerFFN(
+                                            (lin1): Linear(in_features=1024, out_features=4096, bias=True)
+                                            (lin2): Linear(in_features=4096, out_features=1024, bias=True)
+                                          )
+                                          (5): TransformerFFN(
+                                            (lin1): Linear(in_features=1024, out_features=4096, bias=True)
+                                            (lin2): Linear(in_features=4096, out_features=1024, bias=True)
+                                          )
+                                        )
+                                        (layer_norm2): ModuleList(
+                                          (0): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                          (1): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                          (2): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                          (3): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                          (4): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                          (5): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                        )
+                                        (layer_norm15): ModuleList(
+                                          (0): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                          (1): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                          (2): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                          (3): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                          (4): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                          (5): LayerNorm((1024,), eps=1e-12, elementwise_affine=True)
+                                        )
+                                        (encoder_attn): ModuleList(
+                                          (0): MultiHeadAttention(
+                                            (q_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (k_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (v_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (out_lin): ModuleList(
+                                              (0): Linear(in_features=1024, out_features=1024, bias=True)
+                                            )
+                                          )
+                                          (1): MultiHeadAttention(
+                                            (q_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (k_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (v_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (out_lin): ModuleList(
+                                              (0): Linear(in_features=1024, out_features=1024, bias=True)
+                                            )
+                                          )
+                                          (2): MultiHeadAttention(
+                                            (q_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (k_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (v_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (out_lin): ModuleList(
+                                              (0): Linear(in_features=1024, out_features=1024, bias=True)
+                                            )
+                                          )
+                                          (3): MultiHeadAttention(
+                                            (q_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (k_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (v_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (out_lin): ModuleList(
+                                              (0): Linear(in_features=1024, out_features=1024, bias=True)
+                                            )
+                                          )
+                                          (4): MultiHeadAttention(
+                                            (q_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (k_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (v_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (out_lin): ModuleList(
+                                              (0): Linear(in_features=1024, out_features=1024, bias=True)
+                                            )
+                                          )
+                                          (5): MultiHeadAttention(
+                                            (q_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (k_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (v_lin): Linear(in_features=1024, out_features=1024, bias=True)
+                                            (out_lin): ModuleList(
+                                              (0): Linear(in_features=1024, out_features=1024, bias=True)
+                                            )
+                                          )
+                                        )
+                                        (pred_layer): PredLayer(
+                                          (proj): Linear(in_features=1024, out_features=64699, bias=True)
+                                        )
+                                      )
+INFO - 03/30/20 22:31:38 - 0:00:04 - Number of parameters (encoder): 142421179
+INFO - 03/30/20 22:31:38 - 0:00:04 - Number of parameters (decoder): 167623867
+INFO - 03/30/20 22:31:42 - 0:00:08 - ============ Starting epoch 0 ... ============
+INFO - 03/30/20 22:31:42 - 0:00:08 - Creating new training data iterator (mass,de) ...
+INFO - 03/30/20 22:31:42 - 0:00:08 - iterator (mass,de) done
+INFO - 03/30/20 22:31:44 - 0:00:10 -       5 -  111.90 sent/s -  1167.88 words/s - MA-de: 12.0251 - Transformer LR = 2.2488e-07
+INFO - 03/30/20 22:31:46 - 0:00:12 -      10 -  127.05 sent/s -  1230.27 words/s - MA-de: 11.9190 - Transformer LR = 3.4975e-07
+INFO - 03/30/20 22:31:48 - 0:00:13 -      15 -  141.61 sent/s -  1206.89 words/s - MA-de: 11.8725 - Transformer LR = 4.7462e-07
+INFO - 03/30/20 22:31:49 - 0:00:15 -      20 -   74.91 sent/s -  1288.75 words/s - MA-de: 11.7605 - Transformer LR = 5.9950e-07
+INFO - 03/30/20 22:31:51 - 0:00:17 -      25 -   72.34 sent/s -  1296.10 words/s - MA-de: 11.6621 - Transformer LR = 7.2438e-07
+INFO - 03/30/20 22:31:53 - 0:00:19 -      30 -  102.28 sent/s -  1240.62 words/s - MA-de: 11.4666 - Transformer LR = 8.4925e-07
+INFO - 03/30/20 22:31:55 - 0:00:21 -      35 -  165.89 sent/s -  1190.02 words/s - MA-de: 11.2967 - Transformer LR = 9.7412e-07
+INFO - 03/30/20 22:31:57 - 0:00:23 -      40 -   71.26 sent/s -  1325.44 words/s - MA-de: 11.1807 - Transformer LR = 1.0990e-06
+INFO - 03/30/20 22:31:59 - 0:00:24 -      45 -  106.60 sent/s -  1262.31 words/s - MA-de: 11.0307 - Transformer LR = 1.2239e-06
+INFO - 03/30/20 22:32:00 - 0:00:26 -      50 -  111.18 sent/s -  1257.88 words/s - MA-de: 10.8774 - Transformer LR = 1.3488e-06
+INFO - 03/30/20 22:32:02 - 0:00:28 -      55 -   93.01 sent/s -  1255.11 words/s - MA-de: 10.6942 - Transformer LR = 1.4736e-06
+INFO - 03/30/20 22:32:04 - 0:00:30 -      60 -  193.88 sent/s -  1125.15 words/s - MA-de: 10.5617 - Transformer LR = 1.5985e-06
+INFO - 03/30/20 22:32:06 - 0:00:32 -      65 -   90.56 sent/s -  1283.71 words/s - MA-de: 10.3743 - Transformer LR = 1.7234e-06
+INFO - 03/30/20 22:32:08 - 0:00:34 -      70 -  147.17 sent/s -  1177.37 words/s - MA-de: 10.2307 - Transformer LR = 1.8483e-06
+INFO - 03/30/20 22:32:10 - 0:00:35 -      75 -  108.20 sent/s -  1272.62 words/s - MA-de: 10.1238 - Transformer LR = 1.9731e-06
+WARNING - 03/30/20 22:32:18 - 0:00:44 - Signal handler called with signal 15
+WARNING - 03/30/20 22:32:18 - 0:00:44 - Bypassing SIGTERM.
+INFO - 03/30/20 22:32:19 - 0:00:45 -      80 -   16.76 sent/s -   244.61 words/s - MA-de:  9.9926 - Transformer LR = 2.0980e-06
+INFO - 03/30/20 22:32:21 - 0:00:47 -      85 -  133.02 sent/s -  1222.56 words/s - MA-de:  9.8923 - Transformer LR = 2.2229e-06
+INFO - 03/30/20 22:32:23 - 0:00:49 -      90 -  147.35 sent/s -  1208.27 words/s - MA-de:  9.7042 - Transformer LR = 2.3478e-06
+INFO - 03/30/20 22:32:25 - 0:00:51 -      95 -  100.86 sent/s -  1278.88 words/s - MA-de:  9.7651 - Transformer LR = 2.4726e-06
+INFO - 03/30/20 22:32:27 - 0:00:52 -     100 -  159.76 sent/s -  1221.94 words/s - MA-de:  9.7002 - Transformer LR = 2.5975e-06
+INFO - 03/30/20 22:32:28 - 0:00:54 -     105 -  140.37 sent/s -  1202.31 words/s - MA-de:  9.5828 - Transformer LR = 2.7224e-06
+INFO - 03/30/20 22:32:30 - 0:00:56 -     110 -  120.15 sent/s -  1253.90 words/s - MA-de:  9.6424 - Transformer LR = 2.8472e-06
+INFO - 03/30/20 22:32:32 - 0:00:58 -     115 -  101.86 sent/s -  1280.72 words/s - MA-de:  9.4970 - Transformer LR = 2.9721e-06
+INFO - 03/30/20 22:32:34 - 0:01:00 -     120 -   54.94 sent/s -  1349.43 words/s - MA-de:  9.5035 - Transformer LR = 3.0970e-06
+INFO - 03/30/20 22:32:36 - 0:01:01 -     125 -   98.41 sent/s -  1314.35 words/s - MA-de:  9.3874 - Transformer LR = 3.2219e-06
+INFO - 03/30/20 22:32:37 - 0:01:03 -     130 -  107.50 sent/s -  1280.61 words/s - MA-de:  9.3382 - Transformer LR = 3.3467e-06
+INFO - 03/30/20 22:32:39 - 0:01:05 -     135 -  136.76 sent/s -  1233.06 words/s - MA-de:  9.3801 - Transformer LR = 3.4716e-06
+INFO - 03/30/20 22:32:41 - 0:01:07 -     140 -   97.32 sent/s -  1267.43 words/s - MA-de:  9.2194 - Transformer LR = 3.5965e-06
+INFO - 03/30/20 22:32:43 - 0:01:09 -     145 -  113.04 sent/s -  1268.81 words/s - MA-de:  9.1904 - Transformer LR = 3.7214e-06
+INFO - 03/30/20 22:32:45 - 0:01:11 -     150 -  125.09 sent/s -  1277.08 words/s - MA-de:  9.1759 - Transformer LR = 3.8462e-06
+INFO - 03/30/20 22:32:47 - 0:01:12 -     155 -  116.75 sent/s -  1258.77 words/s - MA-de:  9.1416 - Transformer LR = 3.9711e-06
+INFO - 03/30/20 22:32:48 - 0:01:14 -     160 -  164.25 sent/s -  1171.12 words/s - MA-de:  9.0070 - Transformer LR = 4.0960e-06
+INFO - 03/30/20 22:32:50 - 0:01:16 -     165 -  105.73 sent/s -  1270.46 words/s - MA-de:  9.1977 - Transformer LR = 4.2209e-06
+INFO - 03/30/20 22:32:52 - 0:01:18 -     170 -  101.96 sent/s -  1284.64 words/s - MA-de:  9.0254 - Transformer LR = 4.3457e-06
+INFO - 03/30/20 22:32:54 - 0:01:20 -     175 -  163.33 sent/s -  1187.43 words/s - MA-de:  9.1219 - Transformer LR = 4.4706e-06
+INFO - 03/30/20 22:32:56 - 0:01:21 -     180 -   96.37 sent/s -  1259.55 words/s - MA-de:  8.9964 - Transformer LR = 4.5955e-06

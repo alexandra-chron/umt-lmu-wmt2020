@@ -1,0 +1,119 @@
+INFO - 03/30/20 22:25:38 - 0:00:00 - ============ Initialized logger ============
+INFO - 03/30/20 22:25:38 - 0:00:00 - ae_steps: []
+                                     asm: False
+                                     attention_dropout: 0.1
+                                     attention_setting: v1
+                                     back_dataset: {}
+                                     batch_size: 32
+                                     beam_size: 1
+                                     bmt_steps: []
+                                     bptt: 256
+                                     bt_src_langs: []
+                                     bt_steps: []
+                                     clip_grad_norm: 5
+                                     clm_steps: []
+                                     command: python train.py --local_rank=0 --exp_name de_mass --dump_path './models' --data_path '/mounts/data/proj/dario/data/xlm/ted/data' --lgs de --mass_steps de --encoder_only false --emb_dim 1024 --n_layers 6 --n_heads 8 --dropout '0.1' --attention_dropout '0.1' --gelu_activation true --tokens_per_batch 3000 --optimizer 'adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001' --epoch_size 200000 --max_epoch 100000 --word_mass '0.5' --min_len 5 --exp_id "7su1wyhdyn"
+                                     context_size: 0
+                                     data_path: /mounts/data/proj/dario/data/xlm/ted/data
+                                     debug_slurm: False
+                                     debug_train: False
+                                     dropout: 0.1
+                                     dump_path: ./models/de_mass/7su1wyhdyn
+                                     early_stopping: False
+                                     emb_dim: 1024
+                                     encoder_only: False
+                                     english_only: False
+                                     epoch_size: 200000
+                                     eval_bleu: False
+                                     eval_only: False
+                                     exp_id: 7su1wyhdyn
+                                     exp_name: de_mass
+                                     fp16: False
+                                     gelu_activation: True
+                                     global_rank: 0
+                                     group_by_size: True
+                                     id2lang: {0: 'de'}
+                                     is_master: True
+                                     is_slurm_job: False
+                                     lambda_ae: 1
+                                     lambda_bmt: 1
+                                     lambda_bt: 1
+                                     lambda_clm: 1
+                                     lambda_mass: 1
+                                     lambda_mlm: 1
+                                     lambda_mt: 1
+                                     lambda_pc: 1
+                                     lambda_span: 10000
+                                     lang2id: {'de': 0}
+                                     langs: ['de']
+                                     length_penalty: 1
+                                     lg_sampling_factor: -1
+                                     lgs: de
+                                     local_rank: 0
+                                     mass_steps: ['de']
+                                     master_port: -1
+                                     max_batch_size: 0
+                                     max_epoch: 100000
+                                     max_len: 100
+                                     max_vocab: -1
+                                     min_count: 0
+                                     min_len: 5
+                                     mlm_steps: []
+                                     mono_dataset: {'de': {'train': '/mounts/data/proj/dario/data/xlm/ted/data/train.de.pth', 'valid': '/mounts/data/proj/dario/data/xlm/ted/data/valid.de.pth', 'test': '/mounts/data/proj/dario/data/xlm/ted/data/test.de.pth'}}
+                                     mt_steps: []
+                                     multi_gpu: False
+                                     multi_node: False
+                                     n_dec_layers: 6
+                                     n_gpu_per_node: 1
+                                     n_heads: 8
+                                     n_langs: 1
+                                     n_layers: 6
+                                     n_nodes: 1
+                                     node_id: 0
+                                     optimizer: adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001
+                                     para_dataset: {}
+                                     pc_steps: []
+                                     reload_model: 
+                                     sample_alpha: 0
+                                     save_periodic: 0
+                                     share_inout_emb: True
+                                     sinusoidal_embeddings: False
+                                     split_data: False
+                                     stopping_criterion: 
+                                     tokens_per_batch: 3000
+                                     validation_metrics: 
+                                     word_blank: 0
+                                     word_dropout: 0
+                                     word_keep: 0.1
+                                     word_mask: 0.8
+                                     word_mask_keep_rand: 0.8,0.1,0.1
+                                     word_mass: 0.5
+                                     word_pred: 0.15
+                                     word_rand: 0.1
+                                     word_shuffle: 0
+                                     world_size: 1
+INFO - 03/30/20 22:25:38 - 0:00:00 - The experiment will be stored in ./models/de_mass/7su1wyhdyn
+                                     
+INFO - 03/30/20 22:25:38 - 0:00:00 - Running command: python train.py --local_rank=0 --exp_name de_mass --dump_path './models' --data_path '/mounts/data/proj/dario/data/xlm/ted/data' --lgs de --mass_steps de --encoder_only false --emb_dim 1024 --n_layers 6 --n_heads 8 --dropout '0.1' --attention_dropout '0.1' --gelu_activation true --tokens_per_batch 3000 --optimizer 'adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001' --epoch_size 200000 --max_epoch 100000 --word_mass '0.5' --min_len 5
+
+WARNING - 03/30/20 22:25:38 - 0:00:00 - Signal handler installed.
+INFO - 03/30/20 22:25:38 - 0:00:00 - ============ Monolingual data (de)
+INFO - 03/30/20 22:25:38 - 0:00:00 - Loading data from /mounts/data/proj/dario/data/xlm/ted/data/train.de.pth ...
+INFO - 03/30/20 22:25:38 - 0:00:00 - 4209905 words (64699 unique) in 196861 sentences. 2 unknown words (1 unique) covering 0.00% of the data.
+INFO - 03/30/20 22:25:38 - 0:00:00 - Removed 0 empty sentences.
+INFO - 03/30/20 22:25:38 - 0:00:00 - Removed 0 too long sentences.
+INFO - 03/30/20 22:25:38 - 0:00:00 - Removed 3690 too short sentences
+
+INFO - 03/30/20 22:25:38 - 0:00:00 - Loading data from /mounts/data/proj/dario/data/xlm/ted/data/valid.de.pth ...
+INFO - 03/30/20 22:25:38 - 0:00:00 - 32731 words (64699 unique) in 1700 sentences. 0 unknown words (0 unique) covering 0.00% of the data.
+
+INFO - 03/30/20 22:25:38 - 0:00:00 - Loading data from /mounts/data/proj/dario/data/xlm/ted/data/test.de.pth ...
+INFO - 03/30/20 22:25:38 - 0:00:00 - 21802 words (64699 unique) in 993 sentences. 0 unknown words (0 unique) covering 0.00% of the data.
+
+
+
+INFO - 03/30/20 22:25:38 - 0:00:00 - ============ Data summary
+INFO - 03/30/20 22:25:38 - 0:00:00 - Monolingual data   - train -           de:    196861
+INFO - 03/30/20 22:25:38 - 0:00:00 - Monolingual data   - valid -           de:      1700
+INFO - 03/30/20 22:25:38 - 0:00:00 - Monolingual data   -  test -           de:       993
+
