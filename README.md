@@ -167,7 +167,9 @@ python3 train.py --exp_name cont_from_best_unmt_bpe_drop --dump_path './models' 
 ```
 
 
-#### Reference
+#  Reference
+
+If you use our work, please cite: 
 
 ```
 @InProceedings{chronopoulou-EtAl:2020:WMT,
