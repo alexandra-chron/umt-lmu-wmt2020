@@ -147,7 +147,7 @@ Accordingly,
 
 - train.de-hsb.hsb will contain the *original* Sorbian data
 
-After you store the USMT pseudo-parallel corpus in a different directory, put the ``./data/de-wmt/train.{hsb-de,de-hsb}.{hsb,de}`` files in the ``./data/de-sorbian-wmt`` directory, in order to use them in step 6. 
+After you store the USMT pseudo-parallel corpus in a different directory, put the ``./data/de-wmt/train.{hsb-de,de-hsb}.{hsb,de}`` files in the ``./data/de-hsb-wmt`` directory, in order to use them in step 6. 
 
 ### 6. Use the checkpoint from the trained model (step 4) + the pseudo-parallel data from 5 to further train an NMT model. 
 
