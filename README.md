@@ -124,12 +124,12 @@ python3 train.py --exp_name 'unsup_nmt_de_mass_ft_hsb_ft_nmt_sampling_th-0.95_sp
 It is better to pick a subset of train.de, as it will probably be very large (we downloaded 327M sentences from NewsCrawl).
 
 ```
-ln -s ./de-hsb-wmt/train.de to ./de-wmt/train.hsb-de.de
-ln -s ./de-hsb-wmt/train.hsb to ./de-wmt/train.de-hsb.hsb
+ln -s ./de-hsb-wmt/train.de to ./temp/train.hsb-de.de
+ln -s ./de-hsb-wmt/train.hsb to ./temp/train.de-hsb.hsb
 
 ```
 ```
-python3 translate.py --src_lang de --tgt_lang hsb --model_path ./models/unsup_nmt_de_mass_ft_hsb_ft_nmt_sampling_th-0.95_spl-0.5_ft_smt_both_dir/tca9s0sr08/checkpoint.pth --exp_name translate_de_hsb_750k --dump_path './models' --output_path  ./data/de-wmt/train.hsb-de.hsb --batch_size 64 --input_path ./data/de-wmt/train.hsb-de.de --beam 5
+python3 translate.py --src_lang de --tgt_lang hsb --model_path ./models/unsup_nmt_de_mass_ft_hsb_ft_nmt_sampling_th-0.95_spl-0.5_ft_smt_both_dir/tca9s0sr08/checkpoint.pth --exp_name translate_de_hsb_750k --dump_path './models' --output_path  ./data/temp/train.hsb-de.hsb --batch_size 64 --input_path ./data/temp/train.hsb-de.de --beam 5
 ```
 - train.hsb-de.de will contain the *original* German data
 
@@ -138,7 +138,7 @@ python3 translate.py --src_lang de --tgt_lang hsb --model_path ./models/unsup_nm
 This will be used as a pseudo-parallel corpus in the next step. 
 
 ```
-python3 translate.py --src_lang hsb --tgt_lang de --model_path ./models/unsup_nmt_de_mass_ft_hsb_ft_nmt_sampling_th-0.95_spl-0.5_ft_smt_both_dir/tca9s0sr08/checkpoint.pth --exp_name translate_hsb_de_750k --dump_path './models' --output_path  ./data/de-wmt/train.hsb-de.de --batch_size 64 --input_path ./data/de-wmt/train.hsb-de.hsb --beam 5
+python3 translate.py --src_lang hsb --tgt_lang de --model_path ./models/unsup_nmt_de_mass_ft_hsb_ft_nmt_sampling_th-0.95_spl-0.5_ft_smt_both_dir/tca9s0sr08/checkpoint.pth --exp_name translate_hsb_de_750k --dump_path './models' --output_path  ./data/temp/train.hsb-de.de --batch_size 64 --input_path ./data/temp/train.hsb-de.hsb --beam 5
 ```
 
 Accordingly,
@@ -147,7 +147,7 @@ Accordingly,
 
 - train.de-hsb.hsb will contain the *original* Sorbian data
 
-After you store the USMT pseudo-parallel corpus in a different directory, put the ``./data/de-wmt/train.{hsb-de,de-hsb}.{hsb,de}`` files in the ``./data/de-hsb-wmt`` directory, in order to use them in step 6. 
+After you store the USMT pseudo-parallel corpus (``./data/de-hsb-wmt.train.{hsb-de,de-hsb}.{de,hsb}`` in a different directory, put the ``./data/temp/train.{hsb-de,de-hsb}.{hsb,de}`` files in the ``./data/de-hsb-wmt`` directory, in order to use them in step 6. 
 
 ### 6. Use the checkpoint from the trained model (step 4) + the pseudo-parallel data from 5 to further train an NMT model. 
 
