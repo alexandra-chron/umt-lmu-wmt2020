@@ -73,7 +73,7 @@ You can download all the German Newscrawl data, all the Sorbian monolingual data
 
 To preprocess your data using BPE tokenization, make sure you have placed them in ``./data/de-wmt``. Then run:
 
-``` ./get_data_mlm_pretraining.sh --src de ```
+``` ./get_data_mass_pretraining.sh --src de ```
 
 Then, train the German MASS model:
 
