@@ -69,7 +69,7 @@ You can download all the German Newscrawl data, all the Sorbian monolingual data
 
 # Training a baseline UNMT model and adding pseudo-parallel data from USMT
 
-### 1. Pretrain a German encoder-decoder model with attention using the MASS pretraining objective.
+### 1. Pretrain a German encoder-decoder model with attention using the MASS pretraining objective
 
 To preprocess your data using BPE tokenization, make sure you have placed them in ``./data/de-wmt``. Then run:
 
@@ -81,7 +81,7 @@ Then, train the German MASS model:
 python3 train.py --exp_name de_mass --dump_path './models' --data_path './data/de-wmt' --lgs de --mass_steps de --encoder_only false --emb_dim 1024 --n_layers 6 --n_heads 8 --dropout '0.1' --attention_dropout '0.1' --gelu_activation true --tokens_per_batch 2000 --optimizer 'adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001' --epoch_size 200000 --max_epoch 100000 --word_mass '0.5' --min_len 5 
 ```
 
-### 2. Fine-tune the MASS model using Sorbian and German.
+### 2. Fine-tune the MASS model using Sorbian and German
 
 Before this step, you need to extend the vocabulary to accound for the new, Sorbian BPE vocabulary items. Specifically, the embedding layer (and the output layer) of the MASS model need to be increased by the amount of new items added to the existing vocabulary for this step. To do that, use the following command:
 
@@ -97,13 +97,13 @@ Then, fine-tune the model:
 python3 train.py --exp_name de_mass_ft_hsb --dump_path './models' --data_path './data/de-hsb-wmt/' --lgs 'de-hsb' --mass_steps 'de,hsb' --encoder_only false --emb_dim 1024 --n_layers 6 --n_heads 8 --dropout '0.1' --attention_dropout '0.1' --gelu_activation true --tokens_per_batch 2000 --optimizer 'adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001' --epoch_size 50000 --max_epoch 100000 --word_mass '0.5' --min_len 5 --reload_model './models/de_mass/3w8dqrykpd/checkpoint.pth' --increase_vocab_for_lang de --increase_vocab_from_lang hsb --increase_vocab_by $NUMBER
 ```
  
-### 3. Train the resulting fine-tuned MASS model for UNMT, using online BT loss (+ sampling).
+### 3. Train the resulting fine-tuned MASS model for UNMT, using online BT loss (+ sampling)
 
 ```
 python3 train.py --exp_name 'unsup_nmt_de_mass_ft_hsb_ft_nmt_sampling_th-0.95_spl-0.5' --dump_path './models' --data_path './data/de-hsb-wmt/'  --lgs 'de-hsb' --bt_steps 'de-hsb-de,hsb-de-hsb' --encoder_only false --emb_dim 1024 --n_layers 6 --n_heads 8 --dropout '0.1' --attention_dropout '0.1' --gelu_activation true --tokens_per_batch 1000 --batch_size 32 --optimizer 'adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001' --epoch_size 50000 --max_epoch 100000 --eval_bleu true --sample_temperature '0.95' --reload_model './models/de_mass_ft_hsb/8fark50w1p/checkpoint.pth,./models/de_mass_ft_hsb/8fark50w1p/checkpoint.pth' --increase_vocab_for_lang de --increase_vocab_from_lang hsb --sampling_frequency '0.5'
 ```
 
-### 4. Further train the UNMT model, using both a BT loss on the monolingual data and a supervised loss on the pseudo-parallel data from USMT.
+### 4. Further train the UNMT model, using both a BT loss on the monolingual data and a supervised loss on the pseudo-parallel data from USMT
 
 Assuming you have created pseudo-parallel data from USMT and placed them in ``./data/de-hsb-wmt`` in the following form:
 
@@ -119,7 +119,7 @@ This will be used as a pseudo-parallel corpus (``--mt_steps`` flag):
 python3 train.py --exp_name 'unsup_nmt_de_mass_ft_hsb_ft_nmt_sampling_th-0.95_spl-0.5_ft_smt_both_dir' --dump_path './models' --data_path './data/de-hsb-wmt' --lgs 'de-hsb' --ae_steps 'de,hsb' --bt_steps 'de-hsb-de,hsb-de-hsb' --mt_steps 'de-hsb,hsb-de' --encoder_only false --emb_dim 1024 --n_layers 6 --n_heads 8 --dropout '0.1' --attention_dropout '0.1' --gelu_activation true --tokens_per_batch 1000 --batch_size 32 --optimizer 'adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001' --epoch_size 50000 --max_epoch 100000 --eval_bleu true --increase_vocab_for_lang de --increase_vocab_from_lang hsb --reload_model './models/unsup_nmt_de_mass_ft_hsb_ft_nmt_sampling_th-0.95_spl-0.5/fsp0smjzgu/checkpoint.pth,./models/unsup_nmt_de_mass_ft_hsb_ft_nmt_sampling_th-0.95_spl-0.5/fsp0smjzgu/checkpoint.pth' --sampling_frequency '0.5' --sample_temperature '0.95' --load_diff_mt_direction_data true 
 ```
 
-### 5. Use the trained model (from 4) to backtranslate monolingual data in both directions (inference on the trained NMT model).
+### 5. Use the trained model (from 4) to backtranslate monolingual data in both directions (inference on the trained NMT model)
 
 It is better to pick a subset of train.de, as it will probably be very large (we downloaded 327M sentences from NewsCrawl).
 
@@ -149,7 +149,7 @@ Accordingly,
 
 After you store the USMT pseudo-parallel corpus (``./data/de-hsb-wmt.train.{hsb-de,de-hsb}.{de,hsb}`` in a different directory, put the ``./data/temp/train.{hsb-de,de-hsb}.{hsb,de}`` files in the ``./data/de-hsb-wmt`` directory, in order to use them in step 6. 
 
-### 6. Use the checkpoint from the trained model (step 4) + the pseudo-parallel data from 5 to further train an NMT model. 
+### 6. Use the checkpoint from the trained model (step 4) + the pseudo-parallel data from 5 to further train an NMT model
 
 
 ``` 
