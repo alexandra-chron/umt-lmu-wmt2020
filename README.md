@@ -9,7 +9,7 @@ Our system ranked **first** in both translation directions (German -> Sorbian, S
  
 - For the **Neural MT** part, we use [MASS](https://www.microsoft.com/en-us/research/uploads/prod/2019/06/MASS-paper-updated-002.pdf). However, instead of pretraining on German and Sorbian, we pretrain only on German. Upon convergence, we extend the vocabulary of the pretrained model and fine-tune it to Sorbian and German. This follows [RE-LM](https://www.aclweb.org/anthology/2020.emnlp-main.214.pdf). Then, we train for NMT in an unsupervised way (online backtranslation). 
  
-- For the **Statistical MT** part, we use [monoses](https://github.com/artetxem/monoses). Specifically, we map [fastText](https://github.com/facebookresearch/fastText) embeddings using VecMap with identical pairs. Then, we backtranslate and get a pseudo-parallel corpus for both directions.  We train for UNMT using online BT and we also have a supervised loss on the pseudo-parallel corpus from USMT. 
+- For the **Statistical MT** part, we use [monoses](https://github.com/artetxem/monoses). Specifically, we map [fastText](https://github.com/facebookresearch/fastText) embeddings using VecMap with identical pairs. Then, we backtranslate and get a pseudo-parallel corpus for both directions.  We train our NMT system using online BT *and* an supervised loss on the pseudo-parallel corpus from USMT. 
  
  Also useful:
  
