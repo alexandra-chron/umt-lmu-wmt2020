@@ -17,7 +17,7 @@ Our system is based on a combination of Unsupervised Neural MT and Unsupervised 
 - We oversample the Sorbian corpus using BPE-Dropout. For this, we preprocess data using the advanced features of [subword-nmt](https://github.com/rsennrich/subword-nmt#advanced-features). 
 
 Our proposed pipeline:
-<img src="https://github.com/alexandra-chron/umt-lmu-wmt2020/blob/master/system_overview.png" width="380">
+<img src="https://github.com/alexandra-chron/umt-lmu-wmt2020/blob/main/system_overview.png" width="380">
 
 
 
