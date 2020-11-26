@@ -128,8 +128,8 @@ It is better to pick a subset of train.de, as it will probably be very large (we
 ```
 ln -s ./de-hsb-wmt/train.de to ./temp/train.hsb-de.de
 ln -s ./de-hsb-wmt/train.hsb to ./temp/train.de-hsb.hsb
-
 ```
+Then, run the NMT model:
 ```
 python3 translate.py --src_lang de --tgt_lang hsb --model_path ./models/unsup_nmt_de_mass_ft_hsb_ft_nmt_sampling_th-0.95_spl-0.5_ft_smt_both_dir/tca9s0sr08/checkpoint.pth --exp_name translate_de_hsb_750k --dump_path './models' --output_path  ./data/temp/train.hsb-de.hsb --batch_size 64 --input_path ./data/temp/train.hsb-de.de --beam 5
 ```
