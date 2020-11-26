@@ -1,4 +1,4 @@
-This repository contains the source code submitted by LMU Munich to the WMT 2020 Unsupervised MT Shared Task. For a detailed description, check our [paper](https://arxiv.org/pdf/2010.13192.pdf). 
+This repository contains the source code submitted by LMU Munich to the WMT 2020 Unsupervised MT Shared Task. For a detailed description, check our [paper](http://statmt.org/wmt20/pdf/2020.wmt-1.128.pdf). 
 
 Our system ranked **first** in both translation directions (German -> Sorbian, Sorbian->German). This code base is largely based on [MASS](https://github.com/microsoft/MASS/) and [RE-LM](https://github.com/alexandra-chron/relm_unmt/).
 
