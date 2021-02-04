@@ -105,7 +105,26 @@ python3 train.py --exp_name de_mass_ft_hsb --dump_path './models' --data_path '.
 python3 train.py --exp_name 'unsup_nmt_de_mass_ft_hsb_ft_nmt_sampling_th-0.95_spl-0.5' --dump_path './models' --data_path './data/de-hsb-wmt/'  --lgs 'de-hsb' --bt_steps 'de-hsb-de,hsb-de-hsb' --encoder_only false --emb_dim 1024 --n_layers 6 --n_heads 8 --dropout '0.1' --attention_dropout '0.1' --gelu_activation true --tokens_per_batch 1000 --batch_size 32 --optimizer 'adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001' --epoch_size 50000 --max_epoch 100000 --eval_bleu true --sample_temperature '0.95' --reload_model './models/de_mass_ft_hsb/8fark50w1p/checkpoint.pth,./models/de_mass_ft_hsb/8fark50w1p/checkpoint.pth' --increase_vocab_for_lang de --increase_vocab_from_lang hsb --sampling_frequency '0.5'
 ```
 
-### 4. Fine-tune the UNMT model, using both a BT loss on the monolingual data and a supervised loss on the pseudo-parallel data from USMT
+### 4. Building USMT with VecMap and Monoses
+
+We use [Monoses](https://github.com/artetxem/monoses) to build an USMT system. Due to the small Sorbian data the unsupervised mapping used in the off-the-shelf tool doesn't lead to a good performance. We replace this step with fastText and VecMap identical word mapping.
+
+The necessary bilingual word embeddings can be built by running the following scrip. The data preprocessing steps in 1. and 2. are necessary for this step:
+
+```
+./build_embeddings.sh --src de --tgt hsb
+```
+
+The output embeddings can be found in `models/SMT/step3` and `models/SMT/step4`. In order to create pseudo-parallel data please run the missing steps of Monoses accordingly.
+
+Finally the pseudo-parallel data has to be BPE tokenized, e.g.:
+
+```
+./BPE_split.sh --input <original.de> --output ./data/de-hsb-wmt/train.hsb-de.de --src de --tgt hsb
+./BPE_split.sh --input <back-translation.hsb> --output ./data/de-hsb-wmt/train.hsb-de.hsb --src de --tgt hsb
+```
+
+### 5. Fine-tune the UNMT model, using both a BT loss on the monolingual data and a supervised loss on the pseudo-parallel data from USMT
 
 Assuming you have created pseudo-parallel data from USMT and placed them in ``./data/de-hsb-wmt`` in the following form:
 
@@ -121,7 +140,7 @@ This will be used as a pseudo-parallel corpus (``--mt_steps`` flag):
 python3 train.py --exp_name 'unsup_nmt_de_mass_ft_hsb_ft_nmt_sampling_th-0.95_spl-0.5_ft_smt_both_dir' --dump_path './models' --data_path './data/de-hsb-wmt' --lgs 'de-hsb' --ae_steps 'de,hsb' --bt_steps 'de-hsb-de,hsb-de-hsb' --mt_steps 'de-hsb,hsb-de' --encoder_only false --emb_dim 1024 --n_layers 6 --n_heads 8 --dropout '0.1' --attention_dropout '0.1' --gelu_activation true --tokens_per_batch 1000 --batch_size 32 --optimizer 'adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001' --epoch_size 50000 --max_epoch 100000 --eval_bleu true --increase_vocab_for_lang de --increase_vocab_from_lang hsb --reload_model './models/unsup_nmt_de_mass_ft_hsb_ft_nmt_sampling_th-0.95_spl-0.5/fsp0smjzgu/checkpoint.pth,./models/unsup_nmt_de_mass_ft_hsb_ft_nmt_sampling_th-0.95_spl-0.5/fsp0smjzgu/checkpoint.pth' --sampling_frequency '0.5' --sample_temperature '0.95' --load_diff_mt_direction_data true 
 ```
 
-### 5. Use the trained model (from 4) to backtranslate data in both directions (inference)
+### 6. Use the trained model (from 5) to backtranslate data in both directions (inference)
 
 It is better to pick a subset of train.de, as it will probably be very large (we downloaded 327M sentences from NewsCrawl).
 
@@ -151,14 +170,14 @@ Accordingly,
 
 After you store the USMT pseudo-parallel corpus (``./data/de-hsb-wmt.train.{hsb-de,de-hsb}.{de,hsb}`` in a different directory, put the ``./data/temp/train.{hsb-de,de-hsb}.{hsb,de}`` files in the ``./data/de-hsb-wmt`` directory, in order to use them in step 6. 
 
-### 6. Use the trained model (step 4) + the pseudo-parallel data from 5 to further train an NMT model
+### 7. Use the trained model (step 5) + the pseudo-parallel data from 6 to further train an NMT model
 
 
 ``` 
 python3 train.py --exp_name 'unsup_nmt_de_mass_ft_hsb_ft_nmt_sampling_th-0.95_spl-0.5_ft_smt_both_dir' --dump_path './models' --data_path './data/de-hsb-wmt/'  --lgs 'de-hsb' --ae_steps 'de,hsb' --bt_steps 'de-hsb-de,hsb-de-hsb' --mt_steps 'de-hsb,hsb-de' --encoder_only false --emb_dim 1024 --n_layers 6 --n_heads 8 --dropout '0.1' --attention_dropout '0.1' --gelu_activation true --tokens_per_batch 1000 --batch_size 32 --optimizer 'adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001' --epoch_size 50000 --max_epoch 100000 --eval_bleu true --increase_vocab_for_lang de --increase_vocab_from_lang hsb --reload_model './models/unsup_nmt_de_mass_ft_hsb_ft_nmt_sampling_th-0.95_spl-0.5/fsp0smjzgu/checkpoint.pth,./models/unsup_nmt_de_mass_ft_hsb_ft_nmt_sampling_th-0.95_spl-0.5/fsp0smjzgu/checkpoint.pth' --sampling_frequency '0.5' --sample_temperature '0.95' --load_diff_mt_direction_data true 
 ```
 
-### 7. BPE-dropout on Hsb corpus and fine-tuning the NMT model
+### 8. BPE-dropout on Hsb corpus and fine-tuning the NMT model
 
 After you oversample the Hsb corpus, apply BPE-dropout to it using ``apply-bpe`` from [subword-nmt](https://github.com/rsennrich/subword-nmt#advanced-features) with the flag `--dropout 0.1`. 
 

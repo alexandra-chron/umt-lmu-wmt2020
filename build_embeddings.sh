@@ -9,6 +9,7 @@ set -e
 
 # N_THREADS=`nproc`    # number of threads in data preprocessing
 N_THREADS=40    # number of threads in data preprocessing
+GPUS=0    # comma separated list of GPU indices or empty for running on CPUS
 PYTHON=python
 
 # Read arguments
@@ -39,10 +40,12 @@ MAIN_PATH=$PWD
 TOOLS_PATH=$PWD/tools
 MONOSES_DIR=$TOOLS_PATH/monoses
 FASTTEXT_DIR=$TOOLS_PATH/fastText
+VECMAP_DIR=$MONOSES_DIR/third-party/vecmap
 
 DATA_PATH=./data/$SRC-wmt
 PROC_PATH=./data/$SRC-$TGT-wmt
 OUTPUT_DIR=./models/SMT/step3
+BWE_OUTPUT_DIR=./models/SMT/step4
 
 SRC_TRAIN=$DATA_PATH/train_raw.$SRC
 SRC_TRAIN_TOK=$SRC_TRAIN.tok
@@ -57,6 +60,7 @@ N_BIGRAMS=400000
 N_TRIGRAMS=400000
 
 mkdir -p $OUTPUT_DIR
+mkdir -p $BWE_OUTPUT_DIR
 
 #############################################################################
 echo "Building embeddings for $SRC..."
@@ -129,5 +133,11 @@ if [ ! -f $OUTPUT_DIR/emb.trg ]; then
     cat $OUTPUT_DIR/emb.trg.tmp | sed "s/\(.\)_\+\(.\)/\1\&\#32;\2/g" >> $OUTPUT_DIR/emb.trg
 
     rm $OUTPUT_DIR/emb.trg.tmp
+fi
+############################################################################
+echo "Running VecMap..."
+#############################################################################
+if [[ ! -f $BWE_OUTPUT_DIR/emb.src || ! -f $BWE_OUTPUT_DIR/emb.trg ]]; then
+    CUDA_VISIBLE_DEVICES=$GPUS $PYTHON $VECMAP_DIR/map_embeddings.py --identical --orthogonal `[ -z $GPUS ] && echo '' || echo '--cuda'` -v $OUTPUT_DIR/emb.src $OUTPUT_DIR/emb.trg $BWE_OUTPUT_DIR/emb.src $BWE_OUTPUT_DIR/emb.trg
 fi
 ############################################################################
