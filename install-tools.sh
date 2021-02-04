@@ -18,6 +18,12 @@ MOSES_DIR=$TOOLS_PATH/mosesdecoder
 FASTBPE_DIR=$TOOLS_PATH/fastBPE
 FASTBPE=$FASTBPE_DIR/fast
 WMT16_SCRIPTS=$TOOLS_PATH/wmt16-scripts
+FASTTEXT_DIR=$TOOLS_PATH/fastText
+MONOSES_DIR=$TOOLS_PATH/monoses
+MONOSES_THIRD_PARTY_DIR=$MONOSES_DIR/third-party
+MONOSES_MOSES_DIR=$MONOSES_THIRD_PARTY_DIR/mosesdecoder
+MONOSES_FAST_ALIGN_DIR=$MONOSES_THIRD_PARTY_DIR/fast_align
+MONOSES_VECMAP_DIR=$MONOSES_THIRD_PARTY_DIR/vecmap
 
 # tools path
 mkdir -p $TOOLS_PATH
@@ -58,6 +64,52 @@ fi
 if [ ! -d $TOOLS_PATH/wikiextractor ]; then
     echo "Cloning WikiExtractor from GitHub repository..."
     git clone https://github.com/attardi/wikiextractor.git
+fi
+
+cd ..
+
+# Download fastText
+if [ ! -d $FASTTEXT_DIR ]; then
+    echo "Cloning fastText from GitHub repository..."
+    git clone https://github.com/facebookresearch/fastText.git $FASTTEXT_DIR
+fi
+if [ ! -f $FASTTEXT_DIR/fasttext ]; then
+    echo "Compiling fastText"
+    pushd $FASTTEXT_DIR
+    make
+    popd
+fi
+
+# Download monoses
+if [ ! -d $MONOSES_DIR ]; then
+    echo "Cloning Monoses from GitHub repository..."
+    git clone https://github.com/artetxem/monoses.git $MONOSES_DIR
+    mkdir -p $MONOSES_THIRD_PARTY_DIR
+fi
+
+# Download monoses requirements
+if [ ! -d $MONOSES_MOSES_DIR ]; then
+    echo "Linking moses to monoses"
+    ln -s $MOSES_DIR $MONOSES_MOSES_DIR
+fi
+
+if [ ! -d $MONOSES_FAST_ALIGN_DIR ]; then
+    echo "Cloning fast_align from GitHub repository..."
+    git clone 'https://github.com/clab/fast_align.git' $MONOSES_FAST_ALIGN_DIR
+fi
+if [ ! -f $MONOSES_FAST_ALIGN_DIR/build/fast_align ]; then
+    echo "Compiling fast_align"
+    pushd $MONOSES_FAST_ALIGN_DIR
+    mkdir build
+    cd build
+    cmake ..
+    make
+    popd
+fi
+
+if [ ! -d $MONOSES_VECMAP_DIR ]; then
+    echo "Cloning vecmap from GitHub repository..."
+    git clone 'https://github.com/artetxem/vecmap.git' $MONOSES_VECMAP_DIR
 fi
 
 # # Chinese segmenter

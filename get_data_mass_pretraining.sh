@@ -8,7 +8,7 @@ set -e
 # Data preprocessing configuration
 
 CODES=32000     # number of BPE codes
-N_THREADS=16    # number of threads in data preprocessing
+N_THREADS=1    # number of threads in data preprocessing
 
 # Read arguments
 
@@ -47,6 +47,8 @@ NORM_PUNC=$MOSES/scripts/tokenizer/normalize-punctuation.perl
 REM_NON_PRINT_CHAR=$MOSES/scripts/tokenizer/remove-non-printing-char.perl
 TOKENIZER=$MOSES/scripts/tokenizer/tokenizer.perl
 INPUT_FROM_SGM=$MOSES/scripts/ems/support/input-from-sgm.perl
+TRUE_CASE_TRAIN=$MOSES/scripts/recaser/train-truecaser.perl
+TRUE_CASE_APPLY=$MOSES/scripts/recaser/truecase.perl
 
 # fastBPE
 FASTBPE_DIR=$TOOLS_PATH/fastBPE
@@ -66,6 +68,12 @@ SRC_TEST=$DATA_PATH/test_raw.$SRC
 SRC_TRAIN_TOK=$SRC_TRAIN.tok
 SRC_VALID_TOK=$SRC_VALID.tok
 SRC_TEST_TOK=$SRC_TEST.tok
+
+# truecased files
+SRC_TRAIN_TC=$SRC_TRAIN_TOK.tc
+SRC_VALID_TC=$SRC_VALID_TOK.tc
+SRC_TEST_TC=$SRC_TEST_TOK.tc
+MODEL_TC=$DATA_PATH/$SRC.tc.model
 
 # train / valid / test monolingual BPE data
 SRC_TRAIN_BPE=$DATA_PATH/train.$SRC
@@ -87,6 +95,8 @@ SRC_VOCAB=$DATA_PATH/vocab.$SRC
 # preprocessing commands - special case for Romanian
 if [ "$SRC" == "ro" ]; then
   SRC_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $SRC | $REM_NON_PRINT_CHAR | $NORMALIZE_ROMANIAN | $REMOVE_DIACRITICS | $TOKENIZER -l $SRC -no-escape -threads $N_THREADS"
+elif [ "$SRC" == "hsb" ]; then
+  SRC_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l cs | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l cs -no-escape -threads $N_THREADS"
 else
   SRC_PREPROCESSING="$REPLACE_UNICODE_PUNCT | $NORM_PUNC -l $SRC | $REM_NON_PRINT_CHAR |                                            $TOKENIZER -l $SRC -no-escape -threads $N_THREADS"
 fi
@@ -99,17 +109,28 @@ fi
 
 echo "$SRC monolingual data tokenized in: $SRC_TRAIN_TOK"
 
+# truecasing
+if ! [[ -f "$MODEL_TC" ]]; then
+    echo "Training truecase model for $SRC..."
+    eval "$TRUE_CASE_TRAIN --model $MODEL_TC --corpus $SRC_TRAIN_TOK"
+fi
+
+if ! [[ -f "$SRC_TRAIN_TC" ]]; then
+    echo "Truecase $SRC monolingual data..."
+    eval "$TRUE_CASE_APPLY --model $MODEL_TC < $SRC_TRAIN_TOK > $SRC_TRAIN_TC"
+fi
+
 # learn BPE codes
 if [ ! -f "$BPE_CODES" ]; then
   echo "Learning BPE codes..."
-  $FASTBPE learnbpe $CODES $SRC_TRAIN_TOK > $BPE_CODES
+  $FASTBPE learnbpe $CODES $SRC_TRAIN_TC > $BPE_CODES
 fi
 echo "BPE learned in $BPE_CODES"
 
 # apply BPE codes
 if ! [[ -f "$SRC_TRAIN_BPE" ]]; then
   echo "Applying $SRC BPE codes..."
-  $FASTBPE applybpe $SRC_TRAIN_BPE $SRC_TRAIN_TOK $BPE_CODES
+  $FASTBPE applybpe $SRC_TRAIN_BPE $SRC_TRAIN_TC $BPE_CODES
 fi
 echo "BPE codes applied to $SRC in: $SRC_TRAIN_BPE"
 
@@ -139,9 +160,21 @@ if ! [[ -f "$SRC_TEST_TOK" ]]; then
   eval "cat $SRC_TEST | $SRC_PREPROCESSING > $SRC_TEST_TOK"
 fi
 
+echo "Truecasing valid and test data..."
+# truecase data
+if ! [[ -f "$SRC_VALID_TC" ]]; then
+    echo "Truecase $SRC monolingual data..."
+    eval "$TRUE_CASE_APPLY --model $MODEL_TC < $SRC_VALID_TOK > $SRC_VALID_TC"
+fi
+
+if ! [[ -f "$SRC_TEST_TC" ]]; then
+    echo "Truecase $SRC monolingual data..."
+    eval "$TRUE_CASE_APPLY --model $MODEL_TC < $SRC_TEST_TOK > $SRC_TEST_TC"
+fi
+
 echo "Applying BPE to valid and test files..."
-$FASTBPE applybpe $SRC_VALID_BPE "$SRC_VALID_TOK" $BPE_CODES $SRC_VOCAB
-$FASTBPE applybpe $SRC_TEST_BPE  "$SRC_TEST_TOK"  $BPE_CODES $SRC_VOCAB
+$FASTBPE applybpe $SRC_VALID_BPE "$SRC_VALID_TC" $BPE_CODES $SRC_VOCAB
+$FASTBPE applybpe $SRC_TEST_BPE  "$SRC_TEST_TC"  $BPE_CODES $SRC_VOCAB
 
 echo "Binarizing data..."
 rm -f $SRC_VALID_BPE.pth $SRC_TEST_BPE.pth
