@@ -62,7 +62,7 @@ pip install -r ./requirements.txt
 
 To [train with multiple GPUs](https://github.com/facebookresearch/XLM#how-can-i-run-experiments-on-multiple-gpus) use:
 ```
-export NGPU=8; python -m torch.distributed.launch --nproc_per_node=$NGPU train.py
+export NGPU=8; python3 -m torch.distributed.launch --nproc_per_node=$NGPU train.py
 ```
 
 #### Data
@@ -132,6 +132,16 @@ Assuming you have created pseudo-parallel data from USMT and placed them in ``./
 - train.hsb-de.{de, hsb}: original de monolingual data, hsb backtranslations
 
 - train.de-hsb.{de, hsb}: original hsb monolingual data, de backtranslations
+
+You need to binarize the data, using:
+
+ ``` ./preprocess.py ./data/de-hsb-wmt/$VOCAB_FINAL train.hsb-de.{de, hsb} ```
+  
+```  ./preprocess.py ./data/de-hsb-wmt/$VOCAB_FINAL train.de-hsb.{de, hsb} ```
+   
+
+Check the name of VOCAB_FINAL in the de-hsb-wmt/ directory. It will have the form vocab.de-hsb-ext-by-$N, where $N depends on the amount of extra vocabulary items added.  
+
 
 This will be used as a pseudo-parallel corpus (``--mt_steps`` flag):
 
