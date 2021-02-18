@@ -120,8 +120,8 @@ The output embeddings can be found in `models/SMT/step3` and `models/SMT/step4`.
 Finally the pseudo-parallel data has to be BPE tokenized, e.g.:
 
 ```
-./BPE_split.sh --input <original.de> --output ./data/de-hsb-wmt/train.hsb-de.de --src de --tgt hsb
-./BPE_split.sh --input <back-translation.hsb> --output ./data/de-hsb-wmt/train.hsb-de.hsb --src de --tgt hsb
+./BPE_split.sh --input <original.de> --output ./data/de-hsb-wmt/train.hsb-de.de --lang de --src de --tgt hsb
+./BPE_split.sh --input <back-translation.hsb> --output ./data/de-hsb-wmt/train.hsb-de.hsb --lang hsb --src de --tgt hsb
 ```
 
 ### 5. Fine-tune the UNMT model, using both a BT loss on the monolingual data and a supervised loss on the pseudo-parallel data from USMT

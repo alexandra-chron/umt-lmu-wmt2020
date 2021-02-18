@@ -18,6 +18,8 @@ case $key in
     SRC="$2"; shift 2;;
   --tgt)
     TGT="$2"; shift 2;;
+  --lang)
+    LANG="$2"; shift 2;;
   --input)
     INP="$2"; shift 2;;
   --output)
@@ -41,8 +43,17 @@ if [ "$OUTP" == "" ]; then echo "--output not provided"; exit; fi
 
 PROC_PATH=./data/$SRC-$TGT-wmt
 TOOLS_PATH=$PWD/tools
-
+DATA_PATH=./data/$SRC-wmt
 FASTBPE=$TOOLS_PATH/fastBPE/fast
 BPE_JOINT_CODES=$PROC_PATH/codes.$TGT-$SRC
+BPE_CODES_HMR=$DATA_PATH/codes.$SRC
 
-$FASTBPE applybpe $OUTP $INP $BPE_JOINT_CODES
+
+if [ "$LANG" == "de" ];
+then $FASTBPE applybpe $OUTP $INP $BPE_CODES_HMR ; fi
+
+
+if [ "$LANG" == "hsb" ];
+then $FASTBPE applybpe $OUTP $INP $BPE_JOINT_CODES ; fi
+
+
