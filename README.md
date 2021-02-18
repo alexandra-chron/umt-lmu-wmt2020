@@ -7,9 +7,9 @@ Our system ranked **first** in both translation directions (German -> Sorbian, S
 
  The target of the task was to translate between German and Upper Sorbian (minority language of Eastern Germany, similar to Czech). Our system is based on a **combination of Unsupervised Neural MT and Unsupervised Statistical MT**.
  
-- For the **Neural MT** part, we use [MASS](https://www.microsoft.com/en-us/research/uploads/prod/2019/06/MASS-paper-updated-002.pdf). However, instead of pretraining on German and Sorbian, we pretrain only on German. Upon convergence, we extend the vocabulary of the pretrained model and fine-tune it to Sorbian and German. This follows [RE-LM](https://www.aclweb.org/anthology/2020.emnlp-main.214.pdf), a competitive method for low-resource unsupervised NMT. Then, we train for NMT in an unsupervised way (online backtranslation). 
+- For the **Neural MT** part, we use [MASS](https://www.microsoft.com/en-us/research/uploads/prod/2019/06/MASS-paper-updated-002.pdf). However, instead of pretraining on German and Sorbian, we pretrain only on German. Upon convergence, we extend the vocabulary of the pretrained model and fine-tune it to Sorbian and German. This follows [RE-LM](https://www.aclweb.org/anthology/2020.emnlp-main.214.pdf), a competitive method for low-resource unsupervised NMT. Then, we train for NMT in an unsupervised way (online back-translation). 
  
-- For the **Statistical MT** part, we use [monoses](https://github.com/artetxem/monoses). Specifically, we map [fastText](https://github.com/facebookresearch/fastText) embeddings using VecMap with identical pairs. Then, we backtranslate and get a pseudo-parallel corpus for both directions.  We train our NMT system using online BT *and* a supervised loss on the pseudo-parallel corpus from USMT. 
+- For the **Statistical MT** part, we use [monoses](https://github.com/artetxem/monoses). Specifically, we map [fastText](https://github.com/facebookresearch/fastText) embeddings using VecMap with identical pairs. Then, we back-translate and get a pseudo-parallel corpus for both directions.  We train our NMT system using online BT *and* a supervised loss on the pseudo-parallel corpus from USMT. 
  
  Also useful:
  
@@ -71,25 +71,25 @@ You can download all the German Newscrawl data, all the Sorbian monolingual data
 
 # Training a baseline UNMT model and adding pseudo-parallel data from USMT
 
-### 1. Pretrain a German encoder-decoder model with attention using the MASS pretraining objective
+### 1. Pretrain a German (De) encoder-decoder model with attention using the MASS pretraining objective
 
 To preprocess your data using BPE tokenization, make sure you have placed them in ``./data/de-wmt``. Then run:
 
 ``` ./get_data_mass_pretraining.sh --src de ```
 
-Then, train the German MASS model:
+Then, train the De MASS model:
 
 ```
 python3 train.py --exp_name de_mass --dump_path './models' --data_path './data/de-wmt' --lgs de --mass_steps de --encoder_only false --emb_dim 1024 --n_layers 6 --n_heads 8 --dropout '0.1' --attention_dropout '0.1' --gelu_activation true --tokens_per_batch 2000 --optimizer 'adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001' --epoch_size 200000 --max_epoch 100000 --word_mass '0.5' --min_len 5 
 ```
 
-### 2. Fine-tune the MASS model using Sorbian and German
+### 2. Fine-tune the MASS model using Sorbian (Hsb) and German (De)
 
-Before this step, you need to extend the vocabulary to accound for the new, Sorbian BPE vocabulary items. Specifically, the embedding layer (and the output layer) of the MASS model need to be increased by the amount of new items added to the existing vocabulary for this step. To do that, use the following command:
+Before this step, you need to extend the vocabulary to account for the new, Sorbian BPE vocabulary items. Specifically, the embedding layer (and the output layer) of the MASS model need to be increased by the amount of new items added to the existing vocabulary for this step. To do that, use the following command:
 
 ``./get_data_and_preprocess.sh --src de --tgt hsb``
 
-In the directory ./data/de-hsb-wmt/, a file named vocab.hsb-de-ext-by-$NUMBER has been created. This number indicates by how many items we need to extend the initial vocabulary, and consequently the embedding and linear layer, to account for the Hsb language.
+In the directory ``./data/de-hsb-wmt/``, a file named ``vocab.hsb-de-ext-by-$NUMBER`` has been created. This number indicates by how many items we need to extend the initial vocabulary, and consequently the embedding and linear layer, to account for the Hsb language.
 
 You will need to give this value to the ``--increase_vocab_by`` argument so that you successfully run the fine-tuning step of MASS.
 
@@ -117,7 +117,7 @@ The necessary bilingual word embeddings can be built by running the following sc
 
 The output embeddings can be found in `models/SMT/step3` and `models/SMT/step4`. In order to create pseudo-parallel data please run the missing steps of Monoses accordingly.
 
-Finally the pseudo-parallel data has to be BPE tokenized, e.g.:
+The pseudo-parallel data has to be BPE tokenized, e.g.:
 
 ```
 ./BPE_split.sh --input <original.de> --output ./data/de-hsb-wmt/train.hsb-de.de --lang de --src de --tgt hsb
@@ -129,18 +129,19 @@ Finally the pseudo-parallel data has to be BPE tokenized, e.g.:
 Assuming you have created pseudo-parallel data from USMT and placed them in ``./data/de-hsb-wmt`` in the following form:
 
 
-- train.hsb-de.{de, hsb}: original de monolingual data, hsb backtranslations
+- train.hsb-de.{de, hsb}: *original de* monolingual data, *hsb back-translations*
 
-- train.de-hsb.{de, hsb}: original hsb monolingual data, de backtranslations
+- train.de-hsb.{de, hsb}: *original hsb* monolingual data, *de back-translations*
 
-You need to binarize the data, using:
+
+As a final step, you need to binarize the back-translated data, using:
 
  ``` ./preprocess.py ./data/de-hsb-wmt/$VOCAB_FINAL train.hsb-de.{de, hsb} ```
   
 ```  ./preprocess.py ./data/de-hsb-wmt/$VOCAB_FINAL train.de-hsb.{de, hsb} ```
    
 
-Check the name of VOCAB_FINAL in the de-hsb-wmt/ directory. It will have the form vocab.de-hsb-ext-by-$N, where $N depends on the amount of extra vocabulary items added.  
+Check the name of VOCAB_FINAL in the ``de-hsb-wmt/`` directory. It will have the form ``vocab.de-hsb-ext-by-$N``, where $N depends on the amount of extra vocabulary items added.  
 
 
 This will be used as a pseudo-parallel corpus (``--mt_steps`` flag):
@@ -150,7 +151,7 @@ This will be used as a pseudo-parallel corpus (``--mt_steps`` flag):
 python3 train.py --exp_name 'unsup_nmt_de_mass_ft_hsb_ft_nmt_sampling_th-0.95_spl-0.5_ft_smt_both_dir' --dump_path './models' --data_path './data/de-hsb-wmt' --lgs 'de-hsb' --ae_steps 'de,hsb' --bt_steps 'de-hsb-de,hsb-de-hsb' --mt_steps 'de-hsb,hsb-de' --encoder_only false --emb_dim 1024 --n_layers 6 --n_heads 8 --dropout '0.1' --attention_dropout '0.1' --gelu_activation true --tokens_per_batch 1000 --batch_size 32 --optimizer 'adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001' --epoch_size 50000 --max_epoch 100000 --eval_bleu true --increase_vocab_for_lang de --increase_vocab_from_lang hsb --reload_model './models/unsup_nmt_de_mass_ft_hsb_ft_nmt_sampling_th-0.95_spl-0.5/fsp0smjzgu/checkpoint.pth,./models/unsup_nmt_de_mass_ft_hsb_ft_nmt_sampling_th-0.95_spl-0.5/fsp0smjzgu/checkpoint.pth' --sampling_frequency '0.5' --sample_temperature '0.95' --load_diff_mt_direction_data true 
 ```
 
-### 6. Use the trained model (from 5) to backtranslate data in both directions (inference)
+### 6. Use the trained model (from 5) to back-translate data in both directions (inference)
 
 It is better to pick a subset of train.de, as it will probably be very large (we downloaded 327M sentences from NewsCrawl).
 
@@ -162,9 +163,9 @@ Then, run the NMT model:
 ```
 python3 translate.py --src_lang de --tgt_lang hsb --model_path ./models/unsup_nmt_de_mass_ft_hsb_ft_nmt_sampling_th-0.95_spl-0.5_ft_smt_both_dir/tca9s0sr08/checkpoint.pth --exp_name translate_de_hsb_750k --dump_path './models' --output_path  ./data/temp/train.hsb-de.hsb --batch_size 64 --input_path ./data/temp/train.hsb-de.de --beam 5
 ```
-- train.hsb-de.de will contain the *original* German data
+- train.hsb-de.de will contain the *original* De data
 
-- train.hsb-de.hsb will contain the *backtranslated* Sorbian data
+- train.hsb-de.hsb will contain the *back-translated* Hsb data
 
 This will be used as a pseudo-parallel corpus in the next step. 
 
@@ -174,11 +175,11 @@ python3 translate.py --src_lang hsb --tgt_lang de --model_path ./models/unsup_nm
 
 Accordingly,
 
-- train.de-hsb.de will contain the *backtranslated* German data
+- train.de-hsb.de will contain the *back-translated* De data
 
-- train.de-hsb.hsb will contain the *original* Sorbian data
+- train.de-hsb.hsb will contain the *original* Hsb data
 
-After you store the USMT pseudo-parallel corpus (``./data/de-hsb-wmt.train.{hsb-de,de-hsb}.{de,hsb}`` in a different directory, put the ``./data/temp/train.{hsb-de,de-hsb}.{hsb,de}`` files in the ``./data/de-hsb-wmt`` directory, in order to use them in step 6. 
+After you store the USMT pseudo-parallel corpus (see step 5) in a different directory so thast you do not overwrite it, move the ``./data/temp/train.{hsb-de,de-hsb}.{hsb,de}`` files in the ``./data/de-hsb-wmt`` directory, in order to use them in step 7. 
 
 ### 7. Use the trained model (step 5) + the pseudo-parallel data from 6 to further train an NMT model
 
@@ -191,7 +192,7 @@ python3 train.py --exp_name 'unsup_nmt_de_mass_ft_hsb_ft_nmt_sampling_th-0.95_sp
 
 After you oversample the Hsb corpus, apply BPE-dropout to it using ``apply-bpe`` from [subword-nmt](https://github.com/rsennrich/subword-nmt#advanced-features) with the flag `--dropout 0.1`. 
 
-Then, place it in a directory ``./data/de-hsb-wmt-bpe-dropout``, together with the De data and run
+Then, place it in a directory ``./data/de-hsb-wmt-bpe-dropout``, together with the De data and run the following command: 
 
 ```
 python3 train.py --exp_name cont_from_best_unmt_bpe_drop --dump_path './models' --data_path './data/de-hsb-wmt-bpe-dropout' --lgs 'de-hsb' --bt_steps 'de-hsb-de,hsb-de-hsb'  --encoder_only false --emb_dim 1024 --n_layers 6 --n_heads 8 --dropout '0.1' --attention_dropout '0.1' --gelu_activation true --tokens_per_batch 1000 --batch_size 32 --optimizer 'adam_inverse_sqrt,beta1=0.9,beta2=0.98,lr=0.0001' --epoch_size 50000 --max_epoch 100000 --eval_bleu true --increase_vocab_for_lang de --increase_vocab_from_lang hsb --reload_model 'unsup_nmt_de_mass_ft_hsb_ft_nmt_sampling_th-0.95_spl-0.5_ft_smt_both_dir/saa386ltp2/checkpoint.pth,unsup_nmt_de_mass_ft_hsb_ft_nmt_sampling_th-0.95_spl-0.5_ft_smt_both_dir/saa386ltp2/checkpoint.pth' --sampling_frequency '0.5' --sample_temperature '0.95'
