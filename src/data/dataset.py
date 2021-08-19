@@ -373,7 +373,7 @@ class ParallelDataset(Dataset):
             sent2 = self.batch_sentences([self.sent2[a:b] for a, b in pos2])
             yield (sent1, sent2, sentence_ids) if return_indices else (sent1, sent2)
 
-    def get_iterator(self, shuffle, group_by_size=False, n_sentences=-1, return_indices=False):
+    def get_iterator(self, shuffle, group_by_size=False, n_sentences=-1, return_indices=False, features=None, ignore_curriculum=False):
         """
         Return a sentences iterator.
         """
@@ -385,12 +385,18 @@ class ParallelDataset(Dataset):
         lengths = self.lengths1 + self.lengths2 + 4
 
         # select sentences to iterate over
-        if shuffle:
+        if shuffle and features is not None and ignore_curriculum:
             indices = np.random.permutation(len(self.pos1))[:n_sentences]
         else:
             indices = np.arange(n_sentences)
 
         # group sentences by lengths
+
+        if not ignore_curriculum:
+            if features is not None:
+                indices = indices[np.argsort(features, kind='mergesort')]
+
+
         if group_by_size:
             indices = indices[np.argsort(lengths[indices], kind='mergesort')]
 

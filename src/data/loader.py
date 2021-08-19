@@ -55,8 +55,6 @@ def load_binarized(path, params):
     """
     Load a binarized dataset.
     """
-    if len(path) == 2:
-        path = path[0]
     assert path.endswith('.pth')
     if params.debug_train:
         path = path.replace('train', 'valid')
@@ -116,13 +114,9 @@ def load_mono_data(params, data):
 
     global_dico = None
     if params.increase_vocab_for_lang is not None and params.increase_vocab_from_lang is not None:
-        # load the dictionary from the specified language, for efficiency
-        # use it from the valid set (they should be the same for train and test)
-        if len(params.mt_steps) > 0 and len(params.mass_steps) == 0:
-            global_dico = load_binarized(params.para_dataset[(params.increase_vocab_from_lang,
-                                                              params.increase_vocab_for_lang)]['valid'], params)['dico']
-        else:
-            global_dico = load_binarized(params.mono_dataset[params.increase_vocab_from_lang]['valid'], params)['dico']
+        # load the dictionary from the specified language, for efficiency use it from the valid set (they should be the same for train and test)
+        global_dico = load_binarized(params.mono_dataset[params.increase_vocab_from_lang]['valid'], params)['dico']
+
     for lang in params.mono_dataset.keys():
 
         logger.info('============ Monolingual data (%s)' % lang)
@@ -154,7 +148,7 @@ def load_mono_data(params, data):
                 data['mono_stream'][lang][splt].select_data(a, b)
 
             # for denoising auto-encoding and online back-translation, we need a non-stream (batched) dataset
-            if lang in params.ae_steps or lang in params.bt_src_langs or lang in params.mass_steps or lang in params.mass_eval_steps[0]:
+            if lang in params.ae_steps or lang in params.bt_src_langs or lang in params.mass_steps:
 
                 # create batched dataset
                 dataset = Dataset(mono_data['sentences'], mono_data['positions'], params)
@@ -193,13 +187,8 @@ def load_para_data(params, data):
 
     global_dico = None
     if params.increase_vocab_for_lang is not None and params.increase_vocab_from_lang is not None:
-        # load the dictionary from the specified language, for efficiency
-        # use it from the valid set (they should be the same for train and test)
-        if len(params.mt_steps) > 0 and len(params.mass_steps) == 0:
-            global_dico = load_binarized(params.para_dataset[(params.increase_vocab_from_lang,
-                                                              params.increase_vocab_for_lang)]['valid'], params)['dico']
-        else:
-            global_dico = load_binarized(params.mono_dataset[params.increase_vocab_from_lang]['valid'], params)['dico']
+        # load the dictionary from the specified language, for efficiency use it from the valid set (they should be the same for train and test)
+        global_dico = load_binarized(params.mono_dataset[params.increase_vocab_from_lang]['valid'], params)['dico']
 
     for src, tgt in params.para_dataset.keys():
 
@@ -323,11 +312,6 @@ def check_data_params(params):
     assert all([(l1 in params.langs) and (l2 in params.langs or l2 is None) for l1, l2 in params.clm_steps])
     assert len(params.clm_steps) == len(set(params.clm_steps))
 
-    # MASS eval steps
-    mass_eval_steps = [s.split('-') for s in params.mass_eval_steps.split(',') if len(s) > 0]
-    params.mass_eval_steps = [(s[0], None) if len(s) == 1 else tuple(s) for s in mass_eval_steps]
-    assert len(params.mass_eval_steps) == len(set(params.mass_eval_steps))
-
     # MLM / TLM steps
     mlm_steps = [s.split('-') for s in params.mlm_steps.split(',') if len(s) > 0]
     params.mlm_steps = [(s[0], None) if len(s) == 1 else tuple(s) for s in mlm_steps]
@@ -376,7 +360,7 @@ def check_data_params(params):
     params.bt_src_langs = [l1 for l1, _, _ in params.bt_steps]
 
     # check monolingual datasets
-    required_mono = set([l1 for l1, l2 in (params.mlm_steps + params.clm_steps + params.mass_eval_steps) if l2 is None] + params.ae_steps + params.bt_src_langs + params.mass_steps + params.mass_eval_steps)
+    required_mono = set([l1 for l1, l2 in (params.mlm_steps + params.clm_steps) if l2 is None] + params.ae_steps + params.bt_src_langs + params.mass_steps)
     params.mono_dataset = {
         lang: {
             splt: os.path.join(params.data_path, '%s.%s.pth' % (splt, lang))
@@ -384,7 +368,7 @@ def check_data_params(params):
         } for lang in params.langs if lang in required_mono
     }
 
-    # assert all([all([os.path.isfile(p) for p in paths.values()]) for paths in params.mono_dataset.values()])
+    assert all([all([os.path.isfile(p) for p in paths.values()]) for paths in params.mono_dataset.values()])
 
     # check parallel datasets
     required_para_train = set(params.clm_steps + params.mlm_steps + params.pc_steps + params.mt_steps)
@@ -399,7 +383,7 @@ def check_data_params(params):
         } for src in params.langs for tgt in params.langs
         if ((src != tgt and params.load_diff_mt_direction_data) or src < tgt) and ((src, tgt) in required_para or (tgt, src) in required_para)
     }
-    # assert all([all([os.path.isfile(p1) and os.path.isfile(p2) for p1, p2 in paths.values()]) for paths in params.para_dataset.values()])
+    assert all([all([os.path.isfile(p1) and os.path.isfile(p2) for p1, p2 in paths.values()]) for paths in params.para_dataset.values()])
     
     # back parallel datasets
     params.back_dataset = {

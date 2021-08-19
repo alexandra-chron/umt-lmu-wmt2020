@@ -190,23 +190,23 @@ class Trainer(object):
         # log speed + stats + learning rate
         logger.info(s_iter + s_speed + s_stat + s_lr)
 
-    def get_iterator(self, iter_name, lang1, lang2, stream, back):
+    def get_iterator(self, iter_name, lang1, lang2, stream, back, shuffle=True, features=None):
         """
         Create a new iterator for a dataset.
         """
         logger.info("Creating new training data iterator (%s) ..." % ','.join([str(x) for x in [iter_name, lang1, lang2] if x is not None]))
         if lang2 is None:
             if stream:
-                iterator = self.data['mono_stream'][lang1]['train'].get_iterator(shuffle=True)
+                iterator = self.data['mono_stream'][lang1]['train'].get_iterator(shuffle=shuffle)
             else:
                 iterator = self.data['mono'][lang1]['train'].get_iterator(
-                    shuffle=True,
+                    shuffle=shuffle,
                     group_by_size=self.params.group_by_size,
                     n_sentences=-1,
                 )
         elif back is True:
             iterator = self.data['back'][(lang1, lang2)].get_iterator(
-                shuffle=True,
+                shuffle=shuffle,
                 group_by_size=self.params.group_by_size,
                 n_sentences=-1,
             )
@@ -214,16 +214,17 @@ class Trainer(object):
             assert stream is False
             _lang1, _lang2 = (lang1, lang2) if lang1 < lang2 or self.params.load_diff_mt_direction_data else (lang2, lang1)
             iterator = self.data['para'][(_lang1, _lang2)]['train'].get_iterator(
-                shuffle=True,
+                shuffle=shuffle,
                 group_by_size=self.params.group_by_size,
                 n_sentences=-1,
+                features=features
             )
         logger.info("iterator (%s) done" % ','.join([str(x) for x in [iter_name, lang1, lang2] if x is not None]))
 
         self.iterators[(iter_name, lang1, lang2)] = iterator
         return iterator
 
-    def get_batch(self, iter_name, lang1, lang2=None, stream=False, back=False):
+    def get_batch(self, iter_name, lang1, lang2=None, stream=False, back=False, shuffle=True, feature_weights=None):
         """
         Return a batch of sentences from a dataset.
         """
@@ -231,12 +232,48 @@ class Trainer(object):
         assert lang2 is None or lang2 in self.params.langs
         assert stream is False or lang2 is None
         iterator = self.iterators.get((iter_name, lang1, lang2), None)
+
+
         if iterator is None:
-            iterator = self.get_iterator(iter_name, lang1, lang2, stream, back)
+            features_l1_l2 = self.features[(lang1, lang2, False)] if self.features is not None and (
+            lang1, lang2, False) in self.features \
+                                                                     and lang2 is not None and lang1 != lang2 else None
+            features_l1_l2_reverse = self.features[(lang1, lang2, True)] if self.features is not None and (
+            lang1, lang2, True) in self.features \
+                                                                            and lang2 is not None and lang1 != lang2 else None
+
+            if features_l1_l2 is not None:
+                features = [f * feature_weights['features_%s_%s' % (lang1, lang2)] + f_rev * feature_weights['features_%s_%s_reverse' % (lang1, lang2)]
+                            for f, f_rev in zip(features_l1_l2, features_l1_l2_reverse)]
+                # features = [f * feature_weights['features'] + f_rev * feature_weights['features_reverse']
+                #             for f, f_rev in zip(features_l1_l2, features_l1_l2_reverse)]
+            else:
+                features = None
+
+            iterator = self.get_iterator(iter_name, lang1, lang2, stream, back, shuffle=shuffle, features=features)
         try:
             x = next(iterator)
         except StopIteration:
-            iterator = self.get_iterator(iter_name, lang1, lang2, stream, back)
+            if not shuffle:
+                logger.info('Finished with the whole training data. All sentences have been processed.')
+                return (None, None), (None, None)
+
+            features_l1_l2 = self.features[(lang1, lang2, False)] if self.features is not None and (
+            lang1, lang2, False) in self.features \
+                                                                     and lang2 is not None and lang1 != lang2 else None
+            features_l1_l2_reverse = self.features[(lang1, lang2, True)] if self.features is not None and (
+            lang1, lang2, True) in self.features \
+                                                                            and lang2 is not None and lang1 != lang2 else None
+
+            if features_l1_l2 is not None:
+                features = [f * feature_weights['features_%s_%s' % (lang1, lang2)] + f_rev * feature_weights['features_%s_%s_reverse' % (lang1, lang2)]
+                            for f, f_rev in zip(features_l1_l2, features_l1_l2_reverse)]
+                # features = [f * feature_weights['features'] + f_rev * feature_weights['features_reverse']
+                #             for f, f_rev in zip(features_l1_l2, features_l1_l2_reverse)]
+            else:
+                features = None
+
+            iterator = self.get_iterator(iter_name, lang1, lang2, stream, back, features=features)
             x = next(iterator)
         return x if lang2 is None or (lang1 < lang2 or self.params.load_diff_mt_direction_data) else x[::-1]
 
@@ -735,6 +772,8 @@ class EncDecTrainer(Trainer):
         self.data = data
         self.params = params
 
+        self.features = {}
+
         # optimizers
         self.optimizers = {
             'encoder': self.get_optimizer_fp('encoder'),
@@ -805,6 +844,64 @@ class EncDecTrainer(Trainer):
             segs.append(mask_len)
         return segs
 
+    def fixed_restricted_mask_sent(self, x, l, start=0, span_len=100000):
+        """ Restricted mask sents
+                    if span_len is equal to 1, it can be viewed as
+                    discrete mask;
+                    if span_len -> inf, it can be viewed as
+                    pure sentence mask
+                """
+        if span_len <= 0:
+            span_len = 1
+        max_len = 0
+        positions, inputs, targets, outputs, = [], [], [], []
+        mask_len = round(len(x[:, 0]) * self.params.word_mass)
+        len2 = [mask_len for i in range(l.size(0))]
+
+        unmasked_tokens = [0 for i in range(l[0] - mask_len - 1)]
+        segs = self.get_segments(mask_len, span_len)
+        
+        for i in range(l.size(0)):
+            words = np.array(x[:l[i], i].tolist())
+            shuf_segs = self.shuffle_segments(segs, unmasked_tokens)
+            shuf_segs = [s * 0 for s in shuf_segs]
+            if len(shuf_segs) <= start:
+                start = 0
+                break
+            shuf_segs[start] = segs[0]
+            pos_i = self.unfold_segments(shuf_segs)
+            output_i = words[pos_i].copy()
+            target_i = words[pos_i - 1].copy()
+            words[pos_i] = self.mask_word(words[pos_i])
+            
+            inputs.append(words)
+            targets.append(target_i)
+            outputs.append(output_i)
+            positions.append(pos_i - 1)
+
+        if start == 0:
+            None, None, None, None, None, None, None, start
+
+        x1 = torch.LongTensor(max(l), l.size(0)).fill_(self.params.pad_index)
+        x2 = torch.LongTensor(mask_len, l.size(0)).fill_(self.params.pad_index)
+        y = torch.LongTensor(mask_len, l.size(0)).fill_(self.params.pad_index)
+        pos = torch.LongTensor(mask_len, l.size(0)).fill_(self.params.pad_index)
+        l1 = l.clone()
+        l2 = torch.LongTensor(len2)
+        for i in range(l.size(0)):
+            x1[:l1[i], i].copy_(torch.LongTensor(inputs[i]))
+            x2[:l2[i], i].copy_(torch.LongTensor(targets[i]))
+            y[:l2[i], i].copy_(torch.LongTensor(outputs[i]))
+            pos[:l2[i], i].copy_(torch.LongTensor(positions[i]))
+
+        start += 5
+        if len(shuf_segs) == start:
+            start = 0
+
+        pred_mask = y != self.params.pad_index
+        y = y.masked_select(pred_mask)
+        return x1, l1, x2, l2, y, pred_mask, pos, start
+
     def restricted_mask_sent(self, x, l, span_len=100000):
         """ Restricted mask sents
             if span_len is equal to 1, it can be viewed as
@@ -821,6 +918,7 @@ class EncDecTrainer(Trainer):
         
         unmasked_tokens = [0 for i in range(l[0] - mask_len - 1)]
         segs = self.get_segments(mask_len, span_len)
+
         
         for i in range(l.size(0)):
             words = np.array(x[:l[i], i].tolist())
@@ -850,8 +948,73 @@ class EncDecTrainer(Trainer):
         pred_mask = y != self.params.pad_index
         y = y.masked_select(pred_mask)
         return x1, l1, x2, l2, y, pred_mask, pos
+
+    def get_scores(self, lang1, lang2, reverse=False):
+        """
+        Outputs the sentence representation for each batch
+        :return:
+        """
+        params = self.params
+        self.encoder.eval()
+        self.decoder.eval()
+
+
+        lang1_id = params.lang2id[lang1]
+        lang2_id = params.lang2id[lang2]
+
+        (x1, len1), (x2, len2) = self.get_batch('mt', lang1, lang2, shuffle=False)
+
+        if reverse:
+            temp_x1, temp_len1 = x1, len1
+            x1, len1 = x2, len2
+            x2, len2 = temp_x1, temp_len1
+            del temp_x1
+            del temp_len1
+
+        if x1 is None and len1 is None:
+            return None
+
+        langs1 = x1.clone().fill_(lang1_id)
+        langs2 = x2.clone().fill_(lang2_id)
+
+
+        # target words to predict
+        alen = torch.arange(len2.max(), dtype=torch.long, device=len2.device)
+        pred_mask = alen[:, None] < len2[None] - 1  # do not predict anything given the last target word
+        y = x2[1:].masked_select(pred_mask[:-1])
+        assert len(y) == (len2 - 1).sum().item()
+
+        # cuda
+        x1, len1, langs1, x2, len2, langs2, y = to_cuda(x1, len1, langs1, x2, len2, langs2, y)
+        
+        # encode source sentence
+        enc1 = self.encoder('fwd', x=x1, lengths=len1, langs=langs1, causal=False)
+        enc1 = enc1.transpose(0, 1)
+
+        # decode target sentence
+        dec2 = self.decoder('fwd', x=x2, lengths=len2, langs=langs2, causal=True, src_enc=enc1, src_len=len1)
+        
+        # loss
+        scores, loss = self.decoder('predict', tensor=dec2, pred_mask=pred_mask, y=y, get_scores=False, sentence_level=True)
+
+        
+        probs = scores.softmax(dim=2)
+        
+        probs = probs.gather(dim=-1, index=x2.unsqueeze(-1))
+        
+        neg_log_probs = probs.log()
+        neg_log_probs = neg_log_probs * -1
+        
+        neg_log_probs = neg_log_probs.squeeze(-1)
+
+        zeros = torch.zeros_like(neg_log_probs)
+        sums = torch.sum(torch.where(x2 != self.params.pad_index, neg_log_probs, zeros), axis=0)
+        
+        len_norm_sum = sums / len2.float()
+        
+        return len_norm_sum.detach().cpu().numpy()
     
-    def mt_step(self, lang1, lang2, lambda_coeff):
+    def mt_step(self, lang1, lang2, lambda_coeff, feature_weights=None):
         """
         Machine translation step.
         Can also be used for denoising auto-encoding.
@@ -865,14 +1028,13 @@ class EncDecTrainer(Trainer):
 
         lang1_id = params.lang2id[lang1]
         lang2_id = params.lang2id[lang2]
-
         # generate batch
         if lang1 == lang2:
             (x1, len1) = self.get_batch('ae', lang1)
             (x2, len2) = (x1, len1)
             (x1, len1) = self.add_noise(x1, len1)
         else:
-            (x1, len1), (x2, len2) = self.get_batch('mt', lang1, lang2)
+            (x1, len1), (x2, len2) = self.get_batch('mt', lang1, lang2, feature_weights=feature_weights)
 
         langs1 = x1.clone().fill_(lang1_id)
         langs2 = x2.clone().fill_(lang2_id)
@@ -973,6 +1135,44 @@ class EncDecTrainer(Trainer):
         self.stats['processed_s'] += len1.size(0)
         self.stats['processed_w'] += (len1 - 1).sum().item()
 
+    def score_mass_step(self, lang, lambda_coeff):
+        assert lambda_coeff >= 0
+        if lambda_coeff == 0:
+            return
+        params = self.params
+        self.encoder.train()
+        self.decoder.train()
+
+        lang1_id = params.lang2id[lang]
+        lang2_id = params.lang2id[lang]
+        x_, len_ = self.get_batch('mass', lang)
+
+        scores = []
+
+        start = 0
+        while True:
+            (x1, len1, x2, len2, y, pred_mask, positions, start) = self.fixed_restricted_mask_sent(x_, len_, start, int(params.lambda_span))
+            if start == 0:
+                break
+
+            langs1 = x1.clone().fill_(lang1_id)
+            langs2 = x2.clone().fill_(lang2_id)
+
+            x1, len1, langs1, x2, len2, langs2, y, positions = to_cuda(x1, len1, langs1, x2, len2, langs2, y, positions)
+
+            enc1 = self.encoder('fwd', x=x1, lengths=len1, langs=langs1, causal=False)
+            enc1 = enc1.transpose(0, 1)
+
+            enc_mask = x1.ne(params.mask_index)
+            enc_mask = enc_mask.transpose(0, 1)
+
+            dec2 = self.decoder('fwd',
+                                x=x2, lengths=len2, langs=langs2, causal=True,
+                                src_enc=enc1, src_len=len1, positions=positions, enc_mask=enc_mask)
+
+            score, loss = self.decoder('predict', tensor=dec2, pred_mask=pred_mask, y=y, get_scores=False)
+            
+
     def mass_step(self, lang, lambda_coeff):
         assert lambda_coeff >= 0
         if lambda_coeff == 0:
@@ -985,26 +1185,26 @@ class EncDecTrainer(Trainer):
         lang2_id = params.lang2id[lang]
         x_, len_ = self.get_batch('mass', lang)
 
-        (x1, len1, x2, len2, y, pred_mask, positions) = self.restricted_mask_sent(x_, len_, int(params.lambda_span))
+        (x1, len1, x2, len2, y, pred_mask, positions, start) = self.restricted_mask_sent(x_, len_, int(params.lambda_span))
 
         langs1 = x1.clone().fill_(lang1_id)
         langs2 = x2.clone().fill_(lang2_id)
-        
+
         x1, len1, langs1, x2, len2, langs2, y, positions = to_cuda(x1, len1, langs1, x2, len2, langs2, y, positions)
 
         enc1 = self.encoder('fwd', x=x1, lengths=len1, langs=langs1, causal=False)
         enc1 = enc1.transpose(0, 1)
-        
+
         enc_mask = x1.ne(params.mask_index)
         enc_mask = enc_mask.transpose(0, 1)
-        
-        dec2 = self.decoder('fwd', 
-                            x=x2, lengths=len2, langs=langs2, causal=True, 
+
+        dec2 = self.decoder('fwd',
+                            x=x2, lengths=len2, langs=langs2, causal=True,
                             src_enc=enc1, src_len=len1, positions=positions, enc_mask=enc_mask)
-        
+
         _, loss = self.decoder('predict', tensor=dec2, pred_mask=pred_mask, y=y, get_scores=False)
         self.stats[('MA-%s' % lang)].append(loss.item())
-        
+
         self.optimize(loss, ['encoder', 'decoder'])
 
         # number of processed sentences / words

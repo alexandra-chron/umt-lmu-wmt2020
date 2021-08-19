@@ -1,4 +1,3 @@
-# Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 #
 # Copyright (c) 2019-present, Facebook, Inc.
@@ -10,12 +9,10 @@
 
 import json
 import argparse
-import os
-
 import torch
 import numpy as np
 from torch import nn
-# os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+import pickle
 
 from src.slurm import init_signal_handler, init_distributed_mode
 from src.data.loader import check_data_params, load_data
@@ -180,8 +177,6 @@ def get_parser():
                         help="Causal prediction steps (CLM)")
     parser.add_argument("--mlm_steps", type=str, default="",
                         help="Masked prediction steps (MLM / TLM)")
-    parser.add_argument("--mass_eval_steps", type=str, default="",
-                        help="Language we evaluate MASS on")
     parser.add_argument("--bmt_steps", type=str, default="",
                         help="Back Machine Translation step")
     parser.add_argument("--mass_steps", type=str, default="",
@@ -237,11 +232,24 @@ def get_parser():
 
     parser.add_argument("--load_diff_mt_direction_data", type=bool_flag, default=False,
                         help="Enable loading of different datasets for different MT direction")
-    parser.add_argument('--use_adapters', type=bool_flag, default=False)
-    parser.add_argument('--adapter_size', type=int, default=0)
-    parser.add_argument('--use_adapters_enc_dec_attention',  type=bool_flag, default=False)
-    parser.add_argument('--train_enc_dec_attention',  type=bool_flag, default=False)
-    parser.add_argument('--nmt',  type=bool_flag, default=False)
+
+    parser.add_argument("--score_parallel_sentences", type=bool_flag, default=False,
+                        help="Do not run training, just score parallel sentences")
+
+    parser.add_argument("--score_parallel_sentences_reverse", type=bool_flag, default=False,
+                        help="Do not run training, just score parallel sentences, but in the reverse MT direction")
+
+    parser.add_argument("--score_mono_sentences", type=bool_flag, default=False,
+                        help="Do not run training, just score parallel sentences, but in the reverse MT direction")
+
+    parser.add_argument("--scores_output_file_prefix", type=str, default=None,
+                        help="Prefix for the file where scores should be written. Suffixes will be added based on language")
+
+    parser.add_argument("--use_curriculum_learning", type=bool_flag, default=False,
+                        help="Use curriculum learning")
+
+    parser.add_argument("--train_curriculum_learning", type=bool_flag, default=False, help="train curriculum learning only")
+    parser.add_argument("--bo_weights_path", type=str, default=None, help="Path to where to save the best weights from BO")
 
     return parser
 
@@ -263,80 +271,9 @@ def main(params):
     # build model
     if params.encoder_only:
         model = build_model(params, data['dico'])
-
-        if params.use_adapters:
-            logger.info("Using adapters!")
-            for param in model.named_parameters():
-                # freeze everything except for adapters
-                if param[0][:8] != "adapters":
-                    param[1].requires_grad = False
-            for param_name, param in model.embeddings.named_parameters():
-                param.requires_grad = True
-            for param_name, param in model.position_embeddings.named_parameters():
-                param.requires_grad = True
-            for param_name, param in model.pred_layer.named_parameters():
-                param.requires_grad = True
-            for param in model.layer_norm_emb.parameters():
-                param.requires_grad = True
-            # for param in model.layer_norm1.parameters():
-            #     param.requires_grad = True
-            # for param in model.layer_norm2.parameters():
-            #     param.requires_grad = True
-            for param in model.named_parameters():
-                # print(param[0], 'required grad = ' + str(param[1].requires_grad))
-                logger.info(param[0] + ' required grad = ' + str(param[1].requires_grad))
-
-
     else:
         encoder, decoder = build_model(params, data['dico'])
-        # freezing all layers except for adapters applies for fine-tuning mass,
-        # not for unsupervised nmt! in nmt, everything is trainable
-        if not params.nmt:
-            if params.use_adapters:
-                logger.info("Using adapters!")
-                for param in encoder.named_parameters():
-                    # freeze everything except for adapters
-                    if param[0][:8] != "adapters":
-                        param[1].requires_grad = False
-                for param_name, param in encoder.embeddings.named_parameters():
-                    param.requires_grad = True
-                for param_name, param in encoder.position_embeddings.named_parameters():
-                    param.requires_grad = True
-                for param_name, param in encoder.pred_layer.named_parameters():
-                    param.requires_grad = True
-                for param in encoder.layer_norm_emb.parameters():
-                    param.requires_grad = True
-                # for param in model.layer_norm1.parameters():
-                #     param.requires_grad = True
-                # for param in model.layer_norm2.parameters():
-                #     param.requires_grad = True
-                for param in encoder.named_parameters():
-                    logger.info(param[0] + ' required grad = ' + str(param[1].requires_grad))
 
-                for param in decoder.named_parameters():
-                    # freeze everything except for adapters
-                    if param[0][:8] != "adapters":
-                        param[1].requires_grad = False
-                for param_name, param in decoder.embeddings.named_parameters():
-                    param.requires_grad = True
-                for param_name, param in decoder.position_embeddings.named_parameters():
-                    param.requires_grad = True
-                for param_name, param in decoder.pred_layer.named_parameters():
-                    param.requires_grad = True
-                for param in decoder.layer_norm_emb.parameters():
-                    param.requires_grad = True
-
-                if params.use_adapters_enc_dec_attention:
-                    # if we are not using adapters for enc_dec attention, we should let it train
-                    print("Encoder-decoder attention is frozen and adapters are used instead!")
-                elif params.train_enc_dec_attention:
-                    for param in decoder.encoder_attn.parameters():
-                        param.requires_grad = True
-                    print("Encoder-decoder attention is trainable!")
-                else:
-                    print("Encoder-decoder attention is frozen and no adapters are used!")
-        else:
-            print("We are training a UNMT model, so all layers are trainable!")
     # float16
     if params.fp16:
         assert torch.backends.cudnn.enabled
@@ -347,7 +284,7 @@ def main(params):
             decoder = network_to_half(decoder)
 
     # distributed
-    if params.multi_gpu:
+    if params.multi_gpu and not params.train_curriculum_learning:
         logger.info("Using nn.parallel.DistributedDataParallel ...")
         if params.encoder_only:
             model = apex.parallel.DistributedDataParallel(model, delay_allreduce=True)
@@ -371,8 +308,183 @@ def main(params):
         logger.info("__log__:%s" % json.dumps(scores))
         exit()
 
+    if params.score_parallel_sentences:
+
+        params.group_by_size = False
+
+        logger.info("Getting parallel sentence scores for training data and writing to %s" % params.scores_output_file_prefix)
+
+        for lang1, lang2 in params.mt_steps:
+
+            counter = 0
+
+            if not params.score_parallel_sentences_reverse:
+                f_out = open('%s.%s-%s' % (params.scores_output_file_prefix, lang1, lang2), 'a', encoding='utf-8')
+            else:
+                f_out = open('%s.%s-%s.reverse' % (params.scores_output_file_prefix, lang1, lang2), 'a', encoding='utf-8')
+
+            while counter < int(100000000 / params.batch_size):
+
+                scores = trainer.get_scores(lang1, lang2, reverse=params.score_parallel_sentences_reverse)
+
+                if scores is None:
+                    break
+
+                for s in scores:
+                    f_out.write(str(s) + '\n')
+
+            f_out.close()
+        exit()
+
     # set sampling probabilities for training
     set_sampling_probs(data, params)
+
+    feature_weights = None
+
+    if params.use_curriculum_learning:
+
+        set_sampling_probs(data, params)
+
+        lang1, lang2 = params.mt_steps[0]
+        f_in1 = open('%s.%s-%s' % (params.scores_output_file_prefix, lang1, lang2), encoding='utf-8')
+        f_in2 = open('%s.%s-%s' % (params.scores_output_file_prefix, lang2, lang1), encoding='utf-8')
+        f_in3 = open('%s.%s-%s.reverse' % (params.scores_output_file_prefix, lang1, lang2), encoding='utf-8')
+        f_in4 = open('%s.%s-%s.reverse' % (params.scores_output_file_prefix, lang2, lang1), encoding='utf-8')
+
+        features1 = []
+        features2 = []
+        features3 = []
+        features4 = []
+
+        for line in f_in1:
+            features1.append(float(line.strip()))
+
+        for line in f_in2:
+            features2.append(float(line.strip()))
+
+        for line in f_in3:
+            features3.append(float(line.strip()))
+
+        for line in f_in4:
+            features4.append(float(line.strip()))
+
+        f_in1.close()
+        f_in2.close()
+        f_in3.close()
+        f_in4.close()
+
+
+        def train_evaluate(parametrization):
+
+            # for num_trial_run in range(10):
+
+            # logger.info("============ Starting trial run %i ... ============" % num_trial_run)
+
+            encoder, decoder = build_model(params, data['dico'])
+            if params.fp16:
+                assert torch.backends.cudnn.enabled
+                encoder = network_to_half(encoder)
+                decoder = network_to_half(decoder)
+
+            trainer = EncDecTrainer(encoder, decoder, data, params)
+            evaluator = EncDecEvaluator(trainer, data, params)
+
+            trainer.features = {}
+            lang1, lang2 = params.mt_steps[0]
+            trainer.features[(lang1, lang2, False)] = features1
+            trainer.features[(lang2, lang1, False)] = features2
+            trainer.features[(lang1, lang2, True)] = features3
+            trainer.features[(lang2, lang1, True)] = features4
+
+            trainer.n_sentences = 0
+            trainer.iterators = {}
+            feature_weights = parametrization
+
+            feature_weights['features_%s_%s' % (lang1, lang2)] = parametrization['score_weight_%s_%s' % (lang1, lang2)]
+            feature_weights['features_%s_%s' % (lang2, lang1)] = parametrization['score_weight_%s_%s' % (lang2, lang1)]
+            # feature_weights['features'] = parametrization['score_weight']
+            feature_weights['features_%s_%s_reverse' % (lang1, lang2)] = parametrization['score_weight_reverse_%s_%s' % (lang1, lang2)]
+            feature_weights['features_%s_%s_reverse' % (lang2, lang1)] = parametrization['score_weight_reverse_%s_%s' % (lang2, lang1)]
+            # feature_weights['features_reverse'] = parametrization['score_weight_reverse']
+
+            while trainer.n_sentences < trainer.epoch_size:
+
+                # machine translation steps
+                for lang1, lang2 in shuf_order(params.mt_steps, params):
+                    trainer.mt_step(lang1, lang2, params.lambda_mt, feature_weights)
+
+                # back-translation steps
+                for lang1, lang2, lang3 in shuf_order(params.bt_steps):
+                    trainer.bt_step(lang1, lang2, lang3, params.lambda_bt, params.sample_temperature)
+
+                trainer.iter()
+
+            # logger.info("============ End of trial run %i ============" % trainer.epoch)
+
+            # evaluate perplexity
+            scores = evaluator.run_all_evals(trainer)
+
+            ppl = scores["valid_de-hsb_mt_ppl"] + scores["valid_hsb-de_mt_ppl"]
+
+            return {"ppl": (ppl, 0.0), "l2norm": (np.sqrt((ppl ** 2).sum()), 0.0)}
+
+        if params.train_curriculum_learning:
+
+            from ax.plot.trace import optimization_trace_single_method
+            from ax.service.managed_loop import optimize
+
+            best_parameters, values, experiment, model = optimize(
+                parameters=[
+                    {"name": "score_weight_%s_%s" % (lang1, lang2), "type": "range", "bounds": [-1.0, 1.0]},
+                    {"name": "score_weight_%s_%s" % (lang2, lang1), "type": "range", "bounds": [-1.0, 1.0]},
+                    # {"name": "score_weight", "type": "range", "bounds": [-1.0, 1.0]},
+                    {"name": "score_weight_reverse_%s_%s" % (lang1, lang2), "type": "range", "bounds": [-1.0, 1.0]},
+                    {"name": "score_weight_reverse_%s_%s" % (lang2, lang1), "type": "range", "bounds": [-1.0, 1.0]}
+                    # {"name": "score_weight_reverse", "type": "range", "bounds": [-1.0, 1.0]}
+                ],
+                evaluation_function=train_evaluate,
+                objective_name='ppl',
+                minimize=True,
+                total_trials=30
+            )
+
+            f_params = open(params.bo_weights_path, "wb")
+            pickle.dump(best_parameters, f_params)
+            f_params.close()            
+
+            exit()
+        else:
+
+            trainer.features = {}
+            lang1, lang2 = params.mt_steps[0]
+            trainer.features[(lang1, lang2, False)] = features1
+            trainer.features[(lang2, lang1, False)] = features2
+            trainer.features[(lang1, lang2, True)] = features3
+            trainer.features[(lang2, lang1, True)] = features4
+
+            f_params = open(params.bo_weights_path, "rb")
+            best_parameters = pickle.load(f_params)
+            f_params.close()
+
+            parametrization = {}
+            # second experiment 300k
+            parametrization['score_weight_%s_%s' % (lang1, lang2)] = best_parameters['score_weight_%s_%s' % (lang1, lang2)]
+            parametrization['score_weight_%s_%s' % (lang2, lang1)] = best_parameters['score_weight_%s_%s' % (lang2, lang1)]
+            parametrization['score_weight_reverse_%s_%s' % (lang1, lang2)] = best_parameters['score_weight_reverse_%s_%s' % (lang1, lang2)]
+            parametrization['score_weight_reverse_%s_%s' % (lang2, lang1)] = best_parameters['score_weight_reverse_%s_%s' % (lang2, lang1)]
+
+            logger.info(parametrization)
+
+            feature_weights = {}
+            feature_weights['features_%s_%s' % (lang1, lang2)] = parametrization['score_weight_%s_%s' % (lang1, lang2)]
+            feature_weights['features_%s_%s' % (lang2, lang1)] = parametrization['score_weight_%s_%s' % (lang2, lang1)]
+            # feature_weights['features'] = parametrization['score_weight']
+            feature_weights['features_%s_%s_reverse' % (lang1, lang2)] = parametrization[
+                'score_weight_reverse_%s_%s' % (lang1, lang2)]
+            feature_weights['features_%s_%s_reverse' % (lang2, lang1)] = parametrization[
+                'score_weight_reverse_%s_%s' % (lang2, lang1)]
+            # feature_weights['features_reverse'] = parametrization['score_weight_reverse']
+
 
     # language model training
     for _ in range(params.max_epoch):
@@ -405,7 +517,10 @@ def main(params):
 
             # machine translation steps
             for lang1, lang2 in shuf_order(params.mt_steps, params):
-                trainer.mt_step(lang1, lang2, params.lambda_mt)
+                if params.use_curriculum_learning:
+                    trainer.mt_step(lang1, lang2, params.lambda_mt, feature_weights)
+                else:
+                    trainer.mt_step(lang1, lang2, params.lambda_mt)
 
             # back-translation steps
             for lang1, lang2, lang3 in shuf_order(params.bt_steps):
